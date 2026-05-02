@@ -1,0 +1,5 @@
+node_modules/
+auth.json
+data/html/
+data/text/
+data/scheduler.log

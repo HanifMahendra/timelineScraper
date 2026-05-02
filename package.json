@@ -1,0 +1,28 @@
+{
+  "name": "scele-timeline",
+  "version": "1.0.0",
+  "description": "Scraper otomatis untuk timeline tugas/lab/quiz dari SCELE CS UI",
+  "main": "index.js",
+  "scripts": {
+    "login": "node src/login.js",
+    "scrape": "node src/scrapeCourse.js",
+    "extract": "node src/extractAssignments.js",
+    "timeline": "node src/buildTimeline.js",
+    "run": "node index.js",
+    "schedule": "node src/scheduler.js",
+    "schedule:now": "node src/scheduler.js --now",
+    "schedule:once": "node src/scheduler.js --once"
+  },
+  "keywords": [
+    "scele",
+    "ui",
+    "scraper",
+    "timeline"
+  ],
+  "author": "HanifMahendra",
+  "license": "ISC",
+  "dependencies": {
+    "node-cron": "^4.2.1",
+    "playwright": "^1.59.1"
+  }
+}
