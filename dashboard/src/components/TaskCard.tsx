@@ -1,6 +1,7 @@
 'use client';
 
 import { Card, CardContent } from '@/components/ui/card';
+import { calendarDayDiffWIB, taskId } from '@/lib/timelineFilters';
 import type { Task } from '@/types/task';
 
 interface Props {
@@ -69,21 +70,26 @@ function getRelativeTime(task: Task, completed: boolean): string | null {
   const now = Date.now();
   const dl = new Date(task.deadlineISO).getTime();
   const diffMs = dl - now;
+  const diffCalendarDays = calendarDayDiffWIB(task.deadlineISO, now);
   const diffSec = Math.abs(diffMs) / 1000;
   const diffMin = diffSec / 60;
   const diffHour = diffMin / 60;
-  const diffDay = diffHour / 24;
 
   if (diffMs > 0) {
     // Belum lewat
-    if (diffMin < 60) return `deadline ${Math.round(diffMin)} menit lagi`;
-    if (diffHour < 24) return `deadline ${Math.round(diffHour)} jam lagi`;
-    return `deadline ${Math.round(diffDay)} hari lagi`;
+    if (diffCalendarDays === 0) {
+      if (diffMin < 60) return `deadline ${Math.max(1, Math.round(diffMin))} menit lagi`;
+      return `deadline ${Math.round(diffHour)} jam lagi`;
+    }
+    if (diffCalendarDays === 1) return 'deadline besok';
+    return `deadline ${diffCalendarDays} hari lagi`;
   } else {
     // Sudah lewat
-    if (diffMin < 60) return `telat ${Math.round(diffMin)} menit`;
-    if (diffHour < 24) return `telat ${Math.round(diffHour)} jam`;
-    return `telat ${Math.round(diffDay)} hari`;
+    if (diffCalendarDays === 0) {
+      if (diffMin < 60) return `telat ${Math.max(1, Math.round(diffMin))} menit`;
+      return `telat ${Math.round(diffHour)} jam`;
+    }
+    return `telat ${Math.abs(diffCalendarDays)} hari`;
   }
 }
 
@@ -102,7 +108,7 @@ export default function TaskCard({ task, completed = false, onToggleDone }: Prop
   const deadlineLabel = formatDeadlineID(task);
   const relativeTime = getRelativeTime(task, completed);
 
-  const taskId = task.url || task.title;
+  const id = taskId(task);
 
   return (
     <Card
@@ -163,7 +169,7 @@ export default function TaskCard({ task, completed = false, onToggleDone }: Prop
           )}
           {onToggleDone && (
             <button
-              onClick={() => onToggleDone(taskId)}
+              onClick={() => onToggleDone(id)}
               className={`inline-flex items-center gap-1 text-xs font-medium px-2.5 py-1 rounded-md border transition-colors ${
                 completed
                   ? 'text-slate-500 bg-slate-50 hover:bg-slate-100 border-slate-200'

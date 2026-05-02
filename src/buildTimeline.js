@@ -9,6 +9,8 @@ const path = require('path');
 const INPUT_FILE = path.resolve(__dirname, '../data/assignments.json');
 const OUTPUT_FILE = path.resolve(__dirname, '../data/timeline.json');
 const ACTIVE_OVERDUE_WINDOW_MS = 14 * 24 * 60 * 60 * 1000;
+const WIB_OFFSET_MS = 7 * 60 * 60 * 1000;
+const DAY_MS = 24 * 60 * 60 * 1000;
 
 // Ambil tanggal hari ini sebagai YYYY-MM-DD di WIB (+07:00)
 function todayWIB() {
@@ -83,18 +85,24 @@ function formatDeadlineRelative(deadlineISO, nowMs) {
   const deadlineMs = new Date(deadlineISO).getTime();
   const diffMs = deadlineMs - nowMs;
   const diffHours = diffMs / (1000 * 60 * 60);
-  const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+  const nowDate = new Date(nowMs + WIB_OFFSET_MS).toISOString().slice(0, 10);
+  const deadlineDate = new Date(deadlineMs + WIB_OFFSET_MS).toISOString().slice(0, 10);
+  const diffDays = Math.round(
+    (new Date(`${deadlineDate}T00:00:00Z`).getTime() -
+      new Date(`${nowDate}T00:00:00Z`).getTime()) /
+      DAY_MS
+  );
 
   // Jam dan menit dari deadlineISO
   const d = new Date(deadlineMs);
-  const wib = new Date(deadlineMs + 7 * 60 * 60 * 1000);
+  const wib = new Date(deadlineMs + WIB_OFFSET_MS);
   const jam = String(wib.getUTCHours()).padStart(2, '0');
   const menit = String(wib.getUTCMinutes()).padStart(2, '0');
   const waktu = `${jam}:${menit}`;
 
   if (diffHours <= 0) return null; // sudah lewat, jangan pakai ini
-  if (diffHours < 1) return `kurang dari 1 jam lagi (${waktu})`;
-  if (diffHours < 24) return `hari ini jam ${waktu}`;
+  if (diffDays === 0 && diffHours < 1) return `kurang dari 1 jam lagi (${waktu})`;
+  if (diffDays === 0) return `hari ini jam ${waktu}`;
   if (diffDays === 1) return `besok jam ${waktu}`;
   if (diffDays === 2) return `lusa jam ${waktu}`;
 

@@ -1,4 +1,4 @@
-import { getTimeline, getWeeklySummary } from '@/lib/getTimeline';
+import { getTimeline } from '@/lib/getTimeline';
 import DashboardClient from './DashboardClient';
 
 export const dynamic = 'force-dynamic';
@@ -13,8 +13,6 @@ export default function Home() {
     error = e instanceof Error ? e.message : 'Gagal memuat data.';
     timeline = { today: [], upcoming: [], overdue: [] };
   }
-
-  const summary = getWeeklySummary(timeline);
 
   return (
     <div className="min-h-screen bg-slate-50">
@@ -39,13 +37,6 @@ export default function Home() {
             sudah ada.
           </div>
         )}
-
-        <div className="rounded-xl bg-white border border-slate-200 px-4 py-3">
-          <p className="text-sm text-slate-600 leading-relaxed">
-            <span className="font-semibold text-slate-800">Ringkasan: </span>
-            {summary}
-          </p>
-        </div>
 
         <DashboardClient timeline={timeline} />
       </main>

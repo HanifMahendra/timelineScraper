@@ -4,7 +4,8 @@ import { useState, useMemo, useEffect } from 'react';
 import StatsCards from '@/components/StatsCards';
 import Filters from '@/components/Filters';
 import TimelineSection from '@/components/TimelineSection';
-import { isAncientOverdue } from '@/lib/timelineFilters';
+import { getWeeklySummary } from '@/lib/summary';
+import { isAncientOverdue, taskId } from '@/lib/timelineFilters';
 import type { FilterType, Task, TimelineData } from '@/types/task';
 
 interface Props {
@@ -79,7 +80,11 @@ export default function DashboardClient({ timeline }: Props) {
 
   const counts = useMemo<Record<FilterType, number>>(() => {
     const count = (f: FilterType) =>
-      allTasks.filter((t) => matchesFilter(t, f) && matchesSearch(t, search)).length;
+      allTasks.filter((t) => {
+        const completed = completedIds.has(taskId(t));
+        if ((f === 'overdue' || f === 'today') && completed) return false;
+        return matchesFilter(t, f) && matchesSearch(t, search);
+      }).length;
     return {
       all:        count('all'),
       today:      count('today'),
@@ -89,7 +94,7 @@ export default function DashboardClient({ timeline }: Props) {
       lab:        count('lab'),
       other:      count('other'),
     };
-  }, [allTasks, search]);
+  }, [allTasks, completedIds, search]);
 
   const filtered = useMemo(
     () => allTasks.filter((t) => matchesFilter(t, filter) && matchesSearch(t, search)),
@@ -100,22 +105,34 @@ export default function DashboardClient({ timeline }: Props) {
 
   // Untuk mode 'all', pisahkan per bucket; completed tidak masuk urgent
   const todayFiltered = filtered.filter((t) => {
-    const id = t.url || t.title;
-    return t.isDueToday && !completedIds.has(id);
+    return t.isDueToday && !completedIds.has(taskId(t));
   });
   const upcomingFiltered = filtered.filter((t) => !t.isOverdue && !t.isDueToday);
   const overdueFiltered = filtered.filter((t) => {
-    const id = t.url || t.title;
-    return t.isOverdue && !completedIds.has(id);
+    return t.isOverdue && !completedIds.has(taskId(t));
   });
   const completedFiltered = filtered.filter((t) => {
-    const id = t.url || t.title;
-    return completedIds.has(id);
+    return completedIds.has(taskId(t));
   });
+  const summary = useMemo(
+    () => getWeeklySummary(timeline, completedIds),
+    [timeline, completedIds]
+  );
 
   return (
     <div className="space-y-6">
-      <StatsCards timeline={timeline} completedCount={completedIds.size} />
+      <div className="rounded-xl bg-white border border-slate-200 px-4 py-3">
+        <p className="text-sm text-slate-600 leading-relaxed">
+          <span className="font-semibold text-slate-800">Ringkasan: </span>
+          {summary}
+        </p>
+      </div>
+
+      <StatsCards
+        timeline={timeline}
+        completedIds={completedIds}
+        completedCount={completedFiltered.length}
+      />
 
       <Filters
         active={filter}

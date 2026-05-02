@@ -2,7 +2,6 @@ import fs from 'fs';
 import path from 'path';
 import type { Task, TimelineData } from '@/types/task';
 import dashboardTimeline from '@/data/timeline.json';
-import { activeOverdue } from '@/lib/timelineFilters';
 
 const TIMELINE_PATH = path.resolve(process.cwd(), '../data/timeline.json');
 const ASSIGNMENTS_PATH = path.resolve(process.cwd(), '../data/assignments.json');
@@ -50,26 +49,4 @@ export function getTimeline(): TimelineData {
 
   // Deployment fallback: snapshot ini ikut ter-bundle di folder dashboard.
   return SNAPSHOT_TIMELINE;
-}
-
-export function getWeeklySummary(timeline: TimelineData): string {
-  const { today, upcoming, overdue } = timeline;
-  const currentOverdue = activeOverdue(overdue);
-  const parts: string[] = [];
-
-  if (currentOverdue.length > 0) {
-    parts.push(`Ada ${currentOverdue.length} tugas yang udah lewat deadline.`);
-  }
-  if (today.length > 0) {
-    parts.push(`${today.length} tugas harus dikumpulkan hari ini.`);
-  }
-  const endOfWeek = Date.now() + 7 * 24 * 60 * 60 * 1000;
-  const thisWeek = upcoming.filter(
-    (t) => t.deadlineISO && new Date(t.deadlineISO).getTime() <= endOfWeek
-  );
-  if (thisWeek.length > 0) {
-    parts.push(`${thisWeek.length} tugas lagi dalam 7 hari ke depan.`);
-  }
-  if (parts.length === 0) return 'Tidak ada tugas dalam waktu dekat. Santai dulu! ✌️';
-  return parts.join(' ');
 }

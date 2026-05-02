@@ -1,11 +1,12 @@
 'use client';
 
 import { Card, CardContent } from '@/components/ui/card';
-import { activeOverdue } from '@/lib/timelineFilters';
+import { activeOverdue, taskId } from '@/lib/timelineFilters';
 import type { TimelineData } from '@/types/task';
 
 interface Props {
   timeline: TimelineData;
+  completedIds?: Set<string>;
   completedCount?: number;
 }
 
@@ -17,9 +18,9 @@ interface StatItem {
   icon: string;
 }
 
-export default function StatsCards({ timeline, completedCount = 0 }: Props) {
+export default function StatsCards({ timeline, completedIds = new Set(), completedCount = 0 }: Props) {
   const { today, upcoming, overdue } = timeline;
-  const currentOverdue = activeOverdue(overdue);
+  const currentOverdue = activeOverdue(overdue).filter((task) => !completedIds.has(taskId(task)));
   const dueSoon = upcoming.filter((t) => t.isDueSoon).length;
   const total = today.length + upcoming.length + currentOverdue.length;
 
