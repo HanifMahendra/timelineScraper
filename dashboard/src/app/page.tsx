@@ -1,5 +1,6 @@
 import { getTimeline } from '@/lib/getTimeline';
 import DashboardClient from './DashboardClient';
+import AuthGate from '@/components/AuthGate';
 
 export const dynamic = 'force-dynamic';
 
@@ -38,7 +39,9 @@ export default function Home() {
           </div>
         )}
 
-        <DashboardClient timeline={timeline} />
+        <AuthGate>
+          <DashboardClient timeline={timeline} />
+        </AuthGate>
       </main>
     </div>
   );
