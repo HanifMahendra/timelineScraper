@@ -639,6 +639,15 @@
     "rawText": "Submission Tutorial Modul 8 Assignment : Tuesday, 5 May 2026, 9:00 PM"
   },
   {
+    "title": "Kuis 6",
+    "type": "quiz",
+    "course": "Statistika dan Probabilitas",
+    "deadlineText": "Thursday, 7 May , 08:00",
+    "deadlineISO": "2026-05-07T08:00:00+07:00",
+    "url": "https://scele.cs.ui.ac.id/calendar/view.php?view=day&course=4148&time=1778115600#event_109553",
+    "rawText": "Kuis 6 Thursday, 7 May , 08:00"
+  },
+  {
     "title": "Submission Progress Tugas Kelompok - Milestone 75% Assignment",
     "type": "assignment",
     "course": "Pemrograman Lanjut",

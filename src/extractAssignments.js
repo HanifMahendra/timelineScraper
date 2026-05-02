@@ -210,6 +210,58 @@ function extractDeadlineText(text) {
   return dates[0] || null;
 }
 
+function parseCalendarTimeFromUrl(url) {
+  const match = (url || '').match(/[?&]time=(\d+)/);
+  if (!match) return null;
+
+  const timestampMs = Number(match[1]) * 1000;
+  if (!Number.isFinite(timestampMs)) return null;
+  const wib = new Date(timestampMs + 7 * 60 * 60 * 1000);
+  const year = wib.getUTCFullYear();
+  const month = String(wib.getUTCMonth() + 1).padStart(2, '0');
+  const day = String(wib.getUTCDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
+function parseCalendarEventDate(dateText, url) {
+  const dateMatch = (dateText || '').match(/\b(\d{1,2}):(\d{2})\b/);
+  const datePart = parseCalendarTimeFromUrl(url);
+  if (!dateMatch || !datePart) return null;
+
+  const [, hour, minute] = dateMatch;
+  return `${datePart}T${hour.padStart(2, '0')}:${minute}:00+07:00`;
+}
+
+function extractUpcomingQuizEvents(htmlContent, courseName, courseUrl) {
+  const items = [];
+  const eventPattern = /<div\b(?=[^>]*data-region=["']event-item["'])[^>]*>([\s\S]*?)<hr>/gi;
+  let match;
+
+  while ((match = eventPattern.exec(htmlContent)) !== null) {
+    const block = match[1];
+    const links = findActivityLinks(block);
+    const eventLink = links.find((link) => /calendar\/view\.php/i.test(link.href));
+    if (!eventLink || !QUIZ_PATTERN.test(eventLink.title || '')) continue;
+
+    const dateMatch = block.match(/<div\b[^>]*class=["'][^"']*\bdate\b[^"']*["'][^>]*>([\s\S]*?)<\/div>/i);
+    const deadlineISO = parseCalendarEventDate(stripTags(dateMatch?.[1] || ''), eventLink.href);
+    if (!deadlineISO) continue;
+
+    const title = cleanTitle(eventLink.title);
+    items.push({
+      title,
+      type: 'quiz',
+      course: courseName,
+      deadlineText: stripTags(dateMatch?.[1] || '').trim(),
+      deadlineISO,
+      url: eventLink.href || courseUrl || '',
+      rawText: `${title} ${stripTags(dateMatch?.[1] || '').trim()}`.trim(),
+    });
+  }
+
+  return items;
+}
+
 function buildItem({ block, title, url, courseName, courseUrl }) {
   const rawDeadlineText = stripTags(block);
   const rawText = cleanText(rawDeadlineText);
@@ -285,6 +337,8 @@ function extractFromHtml(htmlContent, courseName, courseUrl) {
 
     if (item) items.push(item);
   }
+
+  items.push(...extractUpcomingQuizEvents(normalizedHtml, courseName, courseUrl));
 
   // Fallback untuk HTML Moodle yang tidak memakai <li class="activity"> lengkap.
   if (items.length === 0) {
