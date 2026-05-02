@@ -20,9 +20,10 @@ interface StatItem {
 
 export default function StatsCards({ timeline, completedIds = new Set(), completedCount = 0 }: Props) {
   const { today, upcoming, overdue } = timeline;
+  const activeToday = today.filter((task) => !completedIds.has(taskId(task)));
+  const activeUpcoming = upcoming.filter((task) => !completedIds.has(taskId(task)));
   const currentOverdue = activeOverdue(overdue).filter((task) => !completedIds.has(taskId(task)));
-  const dueSoon = upcoming.filter((t) => t.isDueSoon).length;
-  const total = today.length + upcoming.length + currentOverdue.length;
+  const total = activeToday.length + activeUpcoming.length + currentOverdue.length + completedCount;
 
   const stats: StatItem[] = [
     {
@@ -33,11 +34,11 @@ export default function StatsCards({ timeline, completedIds = new Set(), complet
       icon: '📋',
     },
     {
-      label: 'Hari Ini',
-      value: today.length,
-      colorClass: today.length > 0 ? 'text-red-600' : 'text-slate-500',
-      bgClass: today.length > 0 ? 'bg-red-50 border-red-200' : 'bg-slate-50 border-slate-200',
-      icon: '🔴',
+      label: 'Upcoming',
+      value: activeUpcoming.length,
+      colorClass: activeUpcoming.length > 0 ? 'text-blue-600' : 'text-slate-500',
+      bgClass: activeUpcoming.length > 0 ? 'bg-blue-50 border-blue-200' : 'bg-slate-50 border-slate-200',
+      icon: '📅',
     },
     {
       label: 'Overdue',
