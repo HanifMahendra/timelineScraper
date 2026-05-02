@@ -4,6 +4,7 @@ import { useState, useMemo, useEffect } from 'react';
 import StatsCards from '@/components/StatsCards';
 import Filters from '@/components/Filters';
 import TimelineSection from '@/components/TimelineSection';
+import { isAncientOverdue } from '@/lib/timelineFilters';
 import type { FilterType, Task, TimelineData } from '@/types/task';
 
 interface Props {
@@ -11,7 +12,6 @@ interface Props {
 }
 
 const LS_KEY = 'scele-completed-tasks';
-const TWO_WEEKS_MS = 14 * 24 * 60 * 60 * 1000;
 
 function matchesFilter(task: Task, filter: FilterType): boolean {
   if (filter === 'all') return true;
@@ -33,12 +33,6 @@ function sortByDeadline(tasks: Task[]): Task[] {
     if (b.deadlineISO) return 1;
     return 0;
   });
-}
-
-function isAncientOverdue(task: Task): boolean {
-  if (!task.isOverdue || !task.deadlineISO) return false;
-  const dl = new Date(task.deadlineISO).getTime();
-  return Date.now() - dl > TWO_WEEKS_MS;
 }
 
 export default function DashboardClient({ timeline }: Props) {

@@ -2,6 +2,7 @@ import fs from 'fs';
 import path from 'path';
 import type { Task, TimelineData } from '@/types/task';
 import dashboardTimeline from '@/data/timeline.json';
+import { activeOverdue } from '@/lib/timelineFilters';
 
 const TIMELINE_PATH = path.resolve(process.cwd(), '../data/timeline.json');
 const ASSIGNMENTS_PATH = path.resolve(process.cwd(), '../data/assignments.json');
@@ -53,10 +54,11 @@ export function getTimeline(): TimelineData {
 
 export function getWeeklySummary(timeline: TimelineData): string {
   const { today, upcoming, overdue } = timeline;
+  const currentOverdue = activeOverdue(overdue);
   const parts: string[] = [];
 
-  if (overdue.length > 0) {
-    parts.push(`Ada ${overdue.length} tugas yang udah lewat deadline.`);
+  if (currentOverdue.length > 0) {
+    parts.push(`Ada ${currentOverdue.length} tugas yang udah lewat deadline.`);
   }
   if (today.length > 0) {
     parts.push(`${today.length} tugas harus dikumpulkan hari ini.`);

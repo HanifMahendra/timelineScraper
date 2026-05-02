@@ -8,6 +8,7 @@ const path = require('path');
 
 const INPUT_FILE = path.resolve(__dirname, '../data/assignments.json');
 const OUTPUT_FILE = path.resolve(__dirname, '../data/timeline.json');
+const ACTIVE_OVERDUE_WINDOW_MS = 14 * 24 * 60 * 60 * 1000;
 
 // Ambil tanggal hari ini sebagai YYYY-MM-DD di WIB (+07:00)
 function todayWIB() {
@@ -110,6 +111,15 @@ function hitungTugasMingguIni(upcoming, nowMs) {
   );
 }
 
+function isAncientOverdue(item, nowMs) {
+  if (!item.isOverdue || !item.deadlineISO) return false;
+  return nowMs - new Date(item.deadlineISO).getTime() > ACTIVE_OVERDUE_WINDOW_MS;
+}
+
+function activeOverdue(overdue, nowMs) {
+  return overdue.filter((item) => !isAncientOverdue(item, nowMs));
+}
+
 /**
  * Hasilkan ringkasan mingguan dalam bahasa Indonesia santai.
  * @param {object} timeline - objek { today, upcoming, overdue } dari buildTimeline()
@@ -119,12 +129,13 @@ function hitungTugasMingguIni(upcoming, nowMs) {
 function generateWeeklySummary(timeline, nowOverride) {
   const nowMs = nowOverride ?? Date.now();
   const { today, upcoming, overdue } = timeline;
+  const currentOverdue = activeOverdue(overdue, nowMs);
 
   const parts = [];
 
   // --- Overdue ---
-  if (overdue.length > 0) {
-    const n = overdue.length;
+  if (currentOverdue.length > 0) {
+    const n = currentOverdue.length;
     const label = n === 1 ? 'tugas' : 'tugas';
     parts.push(`⚠️  Ada ${n} ${label} yang udah lewat deadline dan belum kamu selesaikan.`);
   }
@@ -144,7 +155,7 @@ function generateWeeklySummary(timeline, nowOverride) {
   const mingguIni = hitungTugasMingguIni(upcoming, nowMs);
   const totalAktif = today.length + mingguIni.length;
 
-  if (totalAktif === 0 && overdue.length === 0) {
+  if (totalAktif === 0 && currentOverdue.length === 0) {
     parts.push('✅ Kamu aman! Tidak ada tugas dalam waktu dekat.');
     return parts.join('\n');
   }
