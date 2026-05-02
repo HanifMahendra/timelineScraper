@@ -15,6 +15,8 @@ const ACTIVITY_TYPES = new Set(['assignment', 'quiz', 'lab']);
 const LAB_PATTERN = /\b(lab|laboratorium|praktikum|praktik)\b/i;
 const QUIZ_PATTERN = /\b(quiz|kuis)\b/i;
 const ASSIGNMENT_PATTERN = /\b(tugas|assignment|penugasan|homework|hw|tp|tutorial)\b/i;
+const WEEKLY_REFLECTION_PATTERN = /\bweekly\s+reflection\b/i;
+const NON_ACTIONABLE_TITLE_PATTERN = /^(?:deskripsi\s+kuliah|informasi\s+umum|sekilas\s+(?:tentang\s+)?sda)\b/i;
 
 const IGNORED_MODULE_PATTERN = /\/mod\/(?:resource|url|page|book|folder|label|forum|glossary|choice|feedback|survey|wiki|lesson|scorm|attendance|data)\//i;
 const ASSIGN_MODULE_PATTERN = /\/mod\/assign(?:ment)?\//i;
@@ -92,6 +94,14 @@ function parseDeadline(text) {
   return `${year}-${month}-${dd}T${hh}:${minute}:00+07:00`;
 }
 
+function parseNumericDateDeadline(text) {
+  const match = (text || '').match(/\bdeadline\s*:\s*(\d{1,2})-(\d{1,2})-(\d{4})\b/i);
+  if (!match) return null;
+
+  const [, day, month, year] = match;
+  return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}T23:59:00+07:00`;
+}
+
 function decodeHtmlEntities(text) {
   return text
     .replace(/&nbsp;/gi, ' ')
@@ -124,6 +134,7 @@ function cleanText(text) {
 
 function cleanTitle(text) {
   return cleanText(text)
+    .replace(/\(\s*:?\s*\d{1,2}-\d{1,2}-\d{4}\s*\)/g, '')
     .replace(/\b(?:opens?|opened|closes?|due|deadline)\b.*$/i, '')
     .replace(/\s+/g, ' ')
     .trim();
@@ -163,6 +174,7 @@ function findActivityLinks(html) {
 function detectType({ text, url }) {
   const haystack = `${text || ''} ${url || ''}`;
 
+  if (WEEKLY_REFLECTION_PATTERN.test(text || '')) return 'assignment';
   if (IGNORED_MODULE_PATTERN.test(url || '')) return null;
   if (LAB_PATTERN.test(haystack)) return 'lab';
   if (QUIZ_MODULE_PATTERN.test(url || '') || QUIZ_PATTERN.test(text || '')) return 'quiz';
@@ -178,6 +190,7 @@ const LABELED_DEADLINE_RE = new RegExp(
   'i'
 );
 const OPEN_LABEL_RE = /\b(?:opens?|opened|available\s+from)\s*:/i;
+const NUMERIC_DEADLINE_RE = /\bdeadline\s*:\s*(\d{1,2}-\d{1,2}-\d{4})\b/i;
 
 function extractDeadlineText(text) {
   const normalized = (text || '').replace(/\s+/g, ' ').trim();
@@ -185,6 +198,9 @@ function extractDeadlineText(text) {
 
   const labeled = normalized.match(LABELED_DEADLINE_RE);
   if (labeled) return labeled[1];
+
+  const numeric = normalized.match(NUMERIC_DEADLINE_RE);
+  if (numeric) return `Deadline: ${numeric[1]}`;
 
   const dates = [...normalized.matchAll(DATE_TIME_RE)].map((match) => match[0]);
   if (OPEN_LABEL_RE.test(normalized) && dates.length > 1) {
@@ -198,6 +214,8 @@ function buildItem({ block, title, url, courseName, courseUrl }) {
   const rawDeadlineText = stripTags(block);
   const rawText = cleanText(rawDeadlineText);
   const candidateText = cleanText([title, rawText, url].filter(Boolean).join(' '));
+  const isWeeklyReflection =
+    courseName === 'Sistem Interaksi' && WEEKLY_REFLECTION_PATTERN.test(candidateText);
   const type = detectType({ text: candidateText, url });
 
   if (!ACTIVITY_TYPES.has(type)) return null;
@@ -210,15 +228,19 @@ function buildItem({ block, title, url, courseName, courseUrl }) {
   );
 
   if (!finalTitle || finalTitle.length < 3) return null;
+  if (NON_ACTIONABLE_TITLE_PATTERN.test(finalTitle)) return null;
 
   const deadlineText = extractDeadlineText(rawDeadlineText);
+  const deadlineISO = parseDeadline(deadlineText) || parseNumericDateDeadline(deadlineText);
+  if (!deadlineISO && !isWeeklyReflection) return null;
+  if (isWeeklyReflection && !deadlineISO) return null;
 
   return {
     title: finalTitle.slice(0, 200),
     type,
     course: courseName,
     deadlineText: deadlineText || null,
-    deadlineISO: parseDeadline(deadlineText) || null,
+    deadlineISO,
     url: url || courseUrl || '',
     rawText: rawText.slice(0, 500),
   };
@@ -238,7 +260,11 @@ function extractFromHtml(htmlContent, courseName, courseUrl) {
   while ((match = activityPattern.exec(normalizedHtml)) !== null) {
     const block = match[1];
     const links = findActivityLinks(block);
-    const usableLinks = links.filter((link) => !IGNORED_MODULE_PATTERN.test(link.href));
+    const isWeeklyReflectionBlock =
+      courseName === 'Sistem Interaksi' && WEEKLY_REFLECTION_PATTERN.test(stripTags(block));
+    const usableLinks = links.filter(
+      (link) => !IGNORED_MODULE_PATTERN.test(link.href) || isWeeklyReflectionBlock
+    );
     if (links.length > 0 && usableLinks.length === 0) continue;
 
     const primaryLink =

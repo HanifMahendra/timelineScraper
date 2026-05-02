@@ -81,6 +81,15 @@
     "rawText": "Submission Individual Preparation Assignment : Friday, 13 February 2026, 9:00 PM"
   },
   {
+    "title": "Weekly Reflection 2",
+    "type": "assignment",
+    "course": "Sistem Interaksi",
+    "deadlineText": "Deadline: 15-2-2026",
+    "deadlineISO": "2026-02-15T23:59:00+07:00",
+    "url": "https://scele.cs.ui.ac.id/mod/forum/view.php?id=206481",
+    "rawText": "Weekly Reflection 2 ( : 15-2-2026)"
+  },
+  {
     "title": "CP01: Pengantar & Analisis Algoritma Quiz",
     "type": "quiz",
     "course": "Struktur Data dan Algoritma",
@@ -106,6 +115,15 @@
     "deadlineISO": "2026-02-20T21:00:00+07:00",
     "url": "https://scele.cs.ui.ac.id/mod/assign/view.php?id=206972",
     "rawText": "Submission Group Preparation Assignment : Friday, 20 February 2026, 9:00 PM"
+  },
+  {
+    "title": "Weekly Reflection 3",
+    "type": "assignment",
+    "course": "Sistem Interaksi",
+    "deadlineText": "Deadline: 22-2-2026",
+    "deadlineISO": "2026-02-22T23:59:00+07:00",
+    "url": "https://scele.cs.ui.ac.id/mod/forum/view.php?id=206505",
+    "rawText": "Weekly Reflection 3 ( : 22-2-2026)"
   },
   {
     "title": "Submission Tutorial Modul 2 Assignment",
@@ -180,6 +198,15 @@
     "rawText": "Tugas Individu 1 (TI01) - Pemodelan Data Menggunakan model EER Assignment : Thursday, 19 February 2026, 12:00 PM : Friday, 27 February 2026, 11:59 PM"
   },
   {
+    "title": "Weekly Reflection 4",
+    "type": "assignment",
+    "course": "Sistem Interaksi",
+    "deadlineText": "Deadline: 1-3-2026",
+    "deadlineISO": "2026-03-01T23:59:00+07:00",
+    "url": "https://scele.cs.ui.ac.id/mod/forum/view.php?id=206523",
+    "rawText": "Weekly Reflection 4 ( : 1-3-2026)"
+  },
+  {
     "title": "CP03: Rekursi Quiz",
     "type": "quiz",
     "course": "Struktur Data dan Algoritma",
@@ -223,6 +250,15 @@
     "deadlineISO": "2026-03-06T21:00:00+07:00",
     "url": "https://scele.cs.ui.ac.id/mod/assign/view.php?id=206978",
     "rawText": "Submission Progress Tugas Kelompok - Milestone 25% Assignment : Friday, 6 March 2026, 9:00 PM"
+  },
+  {
+    "title": "Weekly Reflection 5",
+    "type": "assignment",
+    "course": "Sistem Interaksi",
+    "deadlineText": "Deadline: 8-3-2026",
+    "deadlineISO": "2026-03-08T23:59:00+07:00",
+    "url": "https://scele.cs.ui.ac.id/mod/forum/view.php?id=206541",
+    "rawText": "Weekly Reflection 5 ( : 8-3-2026)"
   },
   {
     "title": "CP04: Sorting Quiz",
@@ -324,6 +360,15 @@
     "rawText": "Kuis 01 (Susulan) Quiz : Friday, 13 March 2026, 3:40 PM Closed: Friday, 13 March 2026, 4:30 PM Restricted Not available unless any of: Your ID number is 2406400373"
   },
   {
+    "title": "Weekly Reflection 6",
+    "type": "assignment",
+    "course": "Sistem Interaksi",
+    "deadlineText": "Deadline: 15-3-2026",
+    "deadlineISO": "2026-03-15T23:59:00+07:00",
+    "url": "https://scele.cs.ui.ac.id/mod/forum/view.php?id=206562",
+    "rawText": "Weekly Reflection 6 ( : 15-3-2026)"
+  },
+  {
     "title": "Slot Pengumpulan Template 1 Assignment",
     "type": "assignment",
     "course": "Sistem Interaksi",
@@ -369,6 +414,15 @@
     "rawText": "CP05: Linked List Quiz : Thursday, 19 March 2026, 6:00 PM Closed: Thursday, 26 March 2026, 8:00 PM"
   },
   {
+    "title": "Weekly Reflection 7",
+    "type": "assignment",
+    "course": "Sistem Interaksi",
+    "deadlineText": "Deadline: 29-3-2026",
+    "deadlineISO": "2026-03-29T23:59:00+07:00",
+    "url": "https://scele.cs.ui.ac.id/mod/forum/view.php?id=206581",
+    "rawText": "Weekly Reflection 7 ( : 29-3-2026)"
+  },
+  {
     "title": "Submission Tutorial Modul 5 Assignment",
     "type": "assignment",
     "course": "Pemrograman Lanjut",
@@ -403,6 +457,15 @@
     "deadlineISO": "2026-04-05T20:00:00+07:00",
     "url": "https://scele.cs.ui.ac.id/mod/quiz/view.php?id=212509",
     "rawText": "CP06: Tree dan BST Quiz : Wednesday, 1 April 2026, 7:00 AM Closed: Sunday, 5 April 2026, 8:00 PM"
+  },
+  {
+    "title": "Weekly Reflection Topik 8",
+    "type": "assignment",
+    "course": "Sistem Interaksi",
+    "deadlineText": "Deadline: 5-4-2026",
+    "deadlineISO": "2026-04-05T23:59:00+07:00",
+    "url": "https://scele.cs.ui.ac.id/mod/forum/view.php?id=206605",
+    "rawText": "Weekly Reflection Topik 8 ( : 5-4-2026)"
   },
   {
     "title": "Slot Pengumpulan LK9 Assignment",
@@ -468,6 +531,15 @@
     "rawText": "Slot Pengumpulan Template 2 Assignment : Tuesday, 24 March 2026, 12:00 AM : Sunday, 19 April 2026, 5:00 PM"
   },
   {
+    "title": "Weekly Reflection Topik 9",
+    "type": "assignment",
+    "course": "Sistem Interaksi",
+    "deadlineText": "Deadline: 19-4-2026",
+    "deadlineISO": "2026-04-19T23:59:00+07:00",
+    "url": "https://scele.cs.ui.ac.id/mod/forum/view.php?id=206628",
+    "rawText": "Weekly Reflection Topik 9 ( : 19-4-2026)"
+  },
+  {
     "title": "Submission Tutorial Modul 6 Assignment",
     "type": "assignment",
     "course": "Pemrograman Lanjut",
@@ -493,6 +565,15 @@
     "deadlineISO": "2026-04-25T23:55:00+07:00",
     "url": "https://scele.cs.ui.ac.id/mod/assign/view.php?id=206454",
     "rawText": "Slot Pengumpulan Template 3 Assignment : Sunday, 19 April 2026, 12:00 AM : Saturday, 25 April 2026, 11:55 PM"
+  },
+  {
+    "title": "Weekly Reflection Topik 10",
+    "type": "assignment",
+    "course": "Sistem Interaksi",
+    "deadlineText": "Deadline: 26-04-2026",
+    "deadlineISO": "2026-04-26T23:59:00+07:00",
+    "url": "https://scele.cs.ui.ac.id/mod/forum/view.php?id=206646",
+    "rawText": "Weekly Reflection Topik 10 ( : 26-04-2026)"
   },
   {
     "title": "CP08: Binary Heap Quiz",
@@ -655,158 +736,5 @@
     "deadlineISO": "2026-06-03T16:50:00+07:00",
     "url": "https://scele.cs.ui.ac.id/course/view.php?id=4144",
     "rawText": "Quiz 2 - Kelas Sore Opens: Wednesday, 3 June 2026, 4:25 PM : Wednesday, 3 June 2026, 4:50 PM Restricted Not available unless: You belong to Kelas A"
-  },
-  {
-    "title": "Polling Pendataan kuis hari Jumat, 8 Mei 2026 Questionnaire",
-    "type": "quiz",
-    "course": "Basis Data",
-    "deadlineText": null,
-    "deadlineISO": null,
-    "url": "https://scele.cs.ui.ac.id/mod/questionnaire/view.php?id=213480",
-    "rawText": "Polling Pendataan kuis hari Jumat, 8 Mei 2026 Questionnaire"
-  },
-  {
-    "title": "Submisi Persiapan Tugas Kelompok",
-    "type": "assignment",
-    "course": "Pemrograman Lanjut",
-    "deadlineText": null,
-    "deadlineISO": null,
-    "url": "https://scele.cs.ui.ac.id/course/view.php?id=4144",
-    "rawText": "Submisi Persiapan Tugas Kelompok"
-  },
-  {
-    "title": "Laporan Progress Tugas Kelompok",
-    "type": "assignment",
-    "course": "Pemrograman Lanjut",
-    "deadlineText": null,
-    "deadlineISO": null,
-    "url": "https://scele.cs.ui.ac.id/course/view.php?id=4144",
-    "rawText": "Laporan Progress Tugas Kelompok"
-  },
-  {
-    "title": "Kegiatan Akhir Semester Group Presentation AdvProg: TBD (sesuai jadwal ujian dari Sekre) Individual Review AdvProg : RSVP dengan Dosen PIC kelompok Assignment Dosen PIC Kelompok bisa dilihat di sheets",
-    "type": "assignment",
-    "course": "Pemrograman Lanjut",
-    "deadlineText": null,
-    "deadlineISO": null,
-    "url": "https://scele.cs.ui.ac.id/course/view.php?id=4144",
-    "rawText": "Kegiatan Akhir Semester Group Presentation AdvProg: TBD (sesuai jadwal ujian dari Sekre) Individual Review AdvProg : RSVP dengan Dosen PIC kelompok Assignment Dosen PIC Kelompok bisa dilihat di sheets Pembagian Kelompok Proyek Akhir."
-  },
-  {
-    "title": "Deskripsi Kuliah",
-    "type": "assignment",
-    "course": "Sistem Interaksi",
-    "deadlineText": null,
-    "deadlineISO": null,
-    "url": "https://scele.cs.ui.ac.id/course/view.php?id=4137#section-0",
-    "rawText": "Petunjuk: Silakan gunakan section Daftar Konten untuk bernavigasi di course ini. Tentang Kuliah Ini Deskripsi Kuliah | Daftar Konten | Referensi Belajar | Tugas Guest Lecture | Presentasi Proyek Akhir | Ujian Tengah Semester | Tugas ( Template Proyek dan Esai) Daftar Topik Desain Interaksi"
-  },
-  {
-    "title": "Tugas Proyek Kelompok",
-    "type": "assignment",
-    "course": "Sistem Interaksi",
-    "deadlineText": null,
-    "deadlineISO": null,
-    "url": "https://scele.cs.ui.ac.id/course/view.php?id=4137",
-    "rawText": "Tugas Proyek Kelompok"
-  },
-  {
-    "title": "❓ Sekilas Tentang SDA 💭Pernahkah teman-teman bertanya-tanya: Kenapa ketika mencari rute tercepat ke suatu alamat di Google Maps kita bisa mendapatkannya dengan relatif cepat? Padahal ada berpuluh-pul",
-    "type": "assignment",
-    "course": "Struktur Data dan Algoritma",
-    "deadlineText": null,
-    "deadlineISO": null,
-    "url": "https://scele.cs.ui.ac.id/course/view.php?id=4138",
-    "rawText": "❓ Sekilas Tentang SDA 💭Pernahkah teman-teman bertanya-tanya: Kenapa ketika mencari rute tercepat ke suatu alamat di Google Maps kita bisa mendapatkannya dengan relatif cepat? Padahal ada berpuluh-puluh petabyte data yang disimpan di server mereka yang berkaitan dengan lalu lintas dan lokasi. 🤔🤔🤔 Optimasi pencarian informasi merupakan salah satu kontribusi teknologi informasi yang amat membantu banyak tugas di keseharian kita. Di mata kuliah ini, teman-teman akan mempelajari salah satu \"bahan"
-  },
-  {
-    "title": "Informasi Umum",
-    "type": "lab",
-    "course": "Struktur Data dan Algoritma",
-    "deadlineText": null,
-    "deadlineISO": null,
-    "url": "https://scele.cs.ui.ac.id/course/view.php?id=4138#section-0",
-    "rawText": "📋Daftar Konten Laman Perkuliahan Informasi Umum | Tugas Pemrograman (TP) | UTS | Lab Topik 1: Pengantar & Analisis Algoritma"
-  },
-  {
-    "title": "Simulasi Lab",
-    "type": "lab",
-    "course": "Struktur Data dan Algoritma",
-    "deadlineText": null,
-    "deadlineISO": null,
-    "url": "https://scele.cs.ui.ac.id/course/view.php?id=4138",
-    "rawText": "Simulasi Lab"
-  },
-  {
-    "title": "Lab 1",
-    "type": "lab",
-    "course": "Struktur Data dan Algoritma",
-    "deadlineText": null,
-    "deadlineISO": null,
-    "url": "https://scele.cs.ui.ac.id/course/view.php?id=4138",
-    "rawText": "Lab 1"
-  },
-  {
-    "title": "Lab 2",
-    "type": "lab",
-    "course": "Struktur Data dan Algoritma",
-    "deadlineText": null,
-    "deadlineISO": null,
-    "url": "https://scele.cs.ui.ac.id/course/view.php?id=4138",
-    "rawText": "Lab 2"
-  },
-  {
-    "title": "Lab 3",
-    "type": "lab",
-    "course": "Struktur Data dan Algoritma",
-    "deadlineText": null,
-    "deadlineISO": null,
-    "url": "https://scele.cs.ui.ac.id/course/view.php?id=4138",
-    "rawText": "Lab 3"
-  },
-  {
-    "title": "Lab 4",
-    "type": "lab",
-    "course": "Struktur Data dan Algoritma",
-    "deadlineText": null,
-    "deadlineISO": null,
-    "url": "https://scele.cs.ui.ac.id/course/view.php?id=4138",
-    "rawText": "Lab 4"
-  },
-  {
-    "title": "Lab 5",
-    "type": "lab",
-    "course": "Struktur Data dan Algoritma",
-    "deadlineText": null,
-    "deadlineISO": null,
-    "url": "https://scele.cs.ui.ac.id/course/view.php?id=4138",
-    "rawText": "Lab 5"
-  },
-  {
-    "title": "Lab 6",
-    "type": "lab",
-    "course": "Struktur Data dan Algoritma",
-    "deadlineText": null,
-    "deadlineISO": null,
-    "url": "https://scele.cs.ui.ac.id/course/view.php?id=4138",
-    "rawText": "Lab 6"
-  },
-  {
-    "title": "TP 1",
-    "type": "assignment",
-    "course": "Struktur Data dan Algoritma",
-    "deadlineText": null,
-    "deadlineISO": null,
-    "url": "https://scele.cs.ui.ac.id/course/view.php?id=4138",
-    "rawText": "TP 1"
-  },
-  {
-    "title": "TP 2",
-    "type": "assignment",
-    "course": "Struktur Data dan Algoritma",
-    "deadlineText": null,
-    "deadlineISO": null,
-    "url": "https://scele.cs.ui.ac.id/course/view.php?id=4138",
-    "rawText": "TP 2"
   }
 ]
