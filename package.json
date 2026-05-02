@@ -8,6 +8,7 @@
     "scrape": "node src/scrapeCourse.js",
     "extract": "node src/extractAssignments.js",
     "timeline": "node src/buildTimeline.js",
+    "dashboard:data": "node src/syncDashboardData.js",
     "run": "node index.js",
     "schedule": "node src/scheduler.js",
     "schedule:now": "node src/scheduler.js --now",

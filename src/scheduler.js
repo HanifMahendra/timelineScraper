@@ -12,6 +12,7 @@ const cron = require('node-cron');
 const { scrapeCourses } = require('./scrapeCourse');
 const { extractAssignments } = require('./extractAssignments');
 const { buildTimeline, generateWeeklySummary } = require('./buildTimeline');
+const { syncDashboardData } = require('./syncDashboardData');
 
 // Jadwal WIB: node-cron mengikuti timezone server.
 // Jika server di UTC, offset +7 jam: 07:00 WIB = 00:00 UTC, 20:00 WIB = 13:00 UTC.
@@ -45,7 +46,7 @@ async function runPipeline() {
   log.info('=== Pipeline dimulai ===');
 
   // Step 1: Scrape
-  log.info('Step 1/3 — Scraping semua course...');
+  log.info('Step 1/4 — Scraping semua course...');
   let scrapeResults;
   try {
     scrapeResults = await scrapeCourses();
@@ -59,7 +60,7 @@ async function runPipeline() {
   }
 
   // Step 2: Extract
-  log.info('Step 2/3 — Mengekstrak assignments...');
+  log.info('Step 2/4 — Mengekstrak assignments...');
   let assignments;
   try {
     assignments = extractAssignments();
@@ -70,9 +71,10 @@ async function runPipeline() {
   }
 
   // Step 3: Build timeline
-  log.info('Step 3/3 — Membangun timeline...');
+  log.info('Step 3/4 — Membangun timeline...');
+  let timeline;
   try {
-    const timeline = buildTimeline();
+    timeline = buildTimeline();
     log.ok(
       `Timeline selesai: ${timeline.today.length} hari ini, ` +
       `${timeline.upcoming.length} upcoming, ` +
@@ -84,6 +86,16 @@ async function runPipeline() {
     summary.split('\n').forEach((line) => log.info('  ' + line));
   } catch (err) {
     log.error(`Timeline crash: ${err.message}`);
+    return;
+  }
+
+  // Step 4: Sync dashboard snapshot
+  log.info('Step 4/4 — Menyinkronkan snapshot dashboard...');
+  try {
+    const snapshotPath = syncDashboardData();
+    log.ok(`Snapshot dashboard selesai: ${snapshotPath}`);
+  } catch (err) {
+    log.error(`Sync dashboard crash: ${err.message}`);
     return;
   }
 

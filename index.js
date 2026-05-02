@@ -6,7 +6,8 @@
 
 const { scrapeCourses } = require('./src/scrapeCourse');
 const { extractAssignments } = require('./src/extractAssignments');
-const { buildTimeline, generateWeeklySummary } = require('./src/buildTimeline');
+const { buildTimeline } = require('./src/buildTimeline');
+const { syncDashboardData } = require('./src/syncDashboardData');
 
 async function main() {
   console.log('=== SCELE Timeline Scraper ===\n');
@@ -22,6 +23,10 @@ async function main() {
 
   console.log('--- Step 3: Build timeline ---');
   buildTimeline();
+
+  console.log('\n--- Step 4: Sync dashboard snapshot ---');
+  const dashboardSnapshot = syncDashboardData();
+  console.log(`Snapshot dashboard tersimpan di ${dashboardSnapshot}`);
 }
 
 main().catch((err) => {

@@ -1,9 +1,11 @@
 import fs from 'fs';
 import path from 'path';
 import type { Task, TimelineData } from '@/types/task';
+import dashboardTimeline from '@/data/timeline.json';
 
 const TIMELINE_PATH = path.resolve(process.cwd(), '../data/timeline.json');
 const ASSIGNMENTS_PATH = path.resolve(process.cwd(), '../data/assignments.json');
+const SNAPSHOT_TIMELINE = dashboardTimeline as TimelineData;
 
 function addFlags(tasks: Omit<Task, 'isOverdue' | 'isDueToday' | 'isDueSoon'>[]): Task[] {
   const now = Date.now();
@@ -22,10 +24,9 @@ function addFlags(tasks: Omit<Task, 'isOverdue' | 'isDueToday' | 'isDueSoon'>[])
 }
 
 export function getTimeline(): TimelineData {
-  // Coba baca timeline.json terlebih dahulu
+  // Local development: prefer data terbaru dari scraper root.
   if (fs.existsSync(TIMELINE_PATH)) {
     const raw = JSON.parse(fs.readFileSync(TIMELINE_PATH, 'utf-8')) as TimelineData;
-    // timeline.json mungkin sudah punya flags — kembalikan langsung
     if (raw.today || raw.upcoming || raw.overdue) return raw;
   }
 
@@ -46,7 +47,8 @@ export function getTimeline(): TimelineData {
     };
   }
 
-  return { today: [], upcoming: [], overdue: [] };
+  // Deployment fallback: snapshot ini ikut ter-bundle di folder dashboard.
+  return SNAPSHOT_TIMELINE;
 }
 
 export function getWeeklySummary(timeline: TimelineData): string {
