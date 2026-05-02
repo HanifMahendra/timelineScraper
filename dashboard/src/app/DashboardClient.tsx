@@ -39,6 +39,7 @@ function sortByDeadline(tasks: Task[]): Task[] {
 export default function DashboardClient({ timeline }: Props) {
   const [filter, setFilter] = useState<FilterType>('all');
   const [search, setSearch] = useState('');
+  const [selectedCourse, setSelectedCourse] = useState('all');
   const [completedIds, setCompletedIds] = useState<Set<string>>(new Set());
 
   useEffect(() => {
@@ -78,9 +79,37 @@ export default function DashboardClient({ timeline }: Props) {
     [timeline]
   );
 
+  const courses = useMemo(
+    () => [...new Set(allTasks.map((task) => task.course))].sort((a, b) => a.localeCompare(b)),
+    [allTasks]
+  );
+
+  const courseTasks = useMemo(
+    () =>
+      selectedCourse === 'all'
+        ? allTasks
+        : allTasks.filter((task) => task.course === selectedCourse),
+    [allTasks, selectedCourse]
+  );
+
+  const courseTimeline = useMemo<TimelineData>(
+    () => ({
+      today: timeline.today.filter(
+        (task) => selectedCourse === 'all' || task.course === selectedCourse
+      ),
+      upcoming: timeline.upcoming.filter(
+        (task) => selectedCourse === 'all' || task.course === selectedCourse
+      ),
+      overdue: timeline.overdue.filter(
+        (task) => selectedCourse === 'all' || task.course === selectedCourse
+      ),
+    }),
+    [timeline, selectedCourse]
+  );
+
   const counts = useMemo<Record<FilterType, number>>(() => {
     const count = (f: FilterType) =>
-      allTasks.filter((t) => {
+      courseTasks.filter((t) => {
         const completed = completedIds.has(taskId(t));
         if ((f === 'overdue' || f === 'today') && completed) return false;
         return matchesFilter(t, f) && matchesSearch(t, search);
@@ -94,11 +123,11 @@ export default function DashboardClient({ timeline }: Props) {
       lab:        count('lab'),
       other:      count('other'),
     };
-  }, [allTasks, completedIds, search]);
+  }, [courseTasks, completedIds, search]);
 
   const filtered = useMemo(
-    () => allTasks.filter((t) => matchesFilter(t, filter) && matchesSearch(t, search)),
-    [allTasks, filter, search]
+    () => courseTasks.filter((t) => matchesFilter(t, filter) && matchesSearch(t, search)),
+    [courseTasks, filter, search]
   );
 
   const useFlat = filter !== 'all' || search.length > 0;
@@ -115,8 +144,8 @@ export default function DashboardClient({ timeline }: Props) {
     return completedIds.has(taskId(t));
   });
   const summary = useMemo(
-    () => getWeeklySummary(timeline, completedIds),
-    [timeline, completedIds]
+    () => getWeeklySummary(courseTimeline, completedIds),
+    [courseTimeline, completedIds]
   );
 
   return (
@@ -129,7 +158,7 @@ export default function DashboardClient({ timeline }: Props) {
       </div>
 
       <StatsCards
-        timeline={timeline}
+        timeline={courseTimeline}
         completedIds={completedIds}
         completedCount={completedFiltered.length}
       />
@@ -137,8 +166,11 @@ export default function DashboardClient({ timeline }: Props) {
       <Filters
         active={filter}
         search={search}
+        selectedCourse={selectedCourse}
+        courses={courses}
         onFilterChange={setFilter}
         onSearchChange={setSearch}
+        onCourseChange={setSelectedCourse}
         counts={counts}
       />
 
