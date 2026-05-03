@@ -342,6 +342,22 @@
     box-shadow: var(--glow), 0 22px 60px rgba(0, 0, 0, 0.34), inset 0 1px 0 rgba(255, 255, 255, 0.05);
   }
 
+  .theme-root .summary-card,
+  .theme-root .filters-panel,
+  .theme-root .empty-panel,
+  .theme-root [data-slot="card"].stat-card,
+  .theme-root [data-slot="card"].task-card {
+    background: var(--panel) !important;
+    border-color: var(--panel-border) !important;
+    color: var(--text) !important;
+  }
+
+  .theme-root [data-slot="card-content"].stat-card-content,
+  .theme-root [data-slot="card-content"].task-card-content {
+    background: transparent !important;
+    color: inherit !important;
+  }
+
   .login-card {
     padding: 28px;
     overflow: hidden;
