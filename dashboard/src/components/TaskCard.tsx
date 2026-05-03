@@ -1,6 +1,7 @@
 'use client';
 
 import { Card, CardContent } from '@/components/ui/card';
+import { CalendarClock, Check, ExternalLink, RotateCcw } from 'lucide-react';
 import { calendarDayDiffWIB, taskId } from '@/lib/timelineFilters';
 import type { Task } from '@/types/task';
 
@@ -11,18 +12,18 @@ interface Props {
 }
 
 const TYPE_CONFIG = {
-  assignment: { label: 'Tugas', color: 'bg-blue-100 text-blue-700 border-blue-200' },
-  quiz:       { label: 'Quiz',  color: 'bg-purple-100 text-purple-700 border-purple-200' },
-  lab:        { label: 'Lab',   color: 'bg-green-100 text-green-700 border-green-200' },
-  other:      { label: 'Lain',  color: 'bg-slate-100 text-slate-600 border-slate-200' },
+  assignment: { label: 'Tugas', tone: 'assignment' },
+  quiz:       { label: 'Quiz',  tone: 'quiz' },
+  lab:        { label: 'Lab',   tone: 'lab' },
+  other:      { label: 'Lain',  tone: 'other' },
 };
 
 const URGENCY_CONFIG = {
-  overdue:   { label: 'Overdue',  color: 'bg-orange-100 text-orange-700 border-orange-200' },
-  today:     { label: 'Hari ini', color: 'bg-red-100 text-red-700 border-red-200' },
-  soon:      { label: 'Segera',   color: 'bg-amber-100 text-amber-700 border-amber-200' },
-  normal:    { label: null,       color: '' },
-  completed: { label: 'Selesai', color: 'bg-slate-100 text-slate-500 border-slate-200' },
+  overdue:   { label: 'Overdue',  tone: 'overdue' },
+  today:     { label: 'Hari ini', tone: 'today' },
+  soon:      { label: 'Segera',   tone: 'soon' },
+  normal:    { label: null,       tone: 'normal' },
+  completed: { label: 'Selesai', tone: 'completed' },
 };
 
 type UrgencyKey = keyof typeof URGENCY_CONFIG;
@@ -93,14 +94,6 @@ function getRelativeTime(task: Task, completed: boolean): string | null {
   }
 }
 
-const LEFT_BORDER: Record<UrgencyKey, string> = {
-  overdue:   'border-l-4 border-l-orange-400',
-  today:     'border-l-4 border-l-red-400',
-  soon:      'border-l-4 border-l-amber-400',
-  normal:    'border-l-4 border-l-slate-200',
-  completed: 'border-l-4 border-l-green-400',
-};
-
 export default function TaskCard({ task, completed = false, onToggleDone }: Props) {
   const urgency = getUrgency(task, completed);
   const typeConf = TYPE_CONFIG[task.type] ?? TYPE_CONFIG.other;
@@ -112,73 +105,59 @@ export default function TaskCard({ task, completed = false, onToggleDone }: Prop
 
   return (
     <Card
-      className={`shadow-none border border-slate-200 ${LEFT_BORDER[urgency]} hover:shadow-sm transition-shadow ${completed ? 'opacity-60' : ''}`}
+      className={`task-card task-card-${urgency} ${completed ? 'task-card-completed' : ''}`}
     >
-      <CardContent className="p-4">
-        <div className="flex items-start justify-between gap-3">
-          {/* Kiri: judul + course */}
-          <div className="min-w-0 flex-1">
+      <CardContent className="task-card-content">
+        <div className="task-card-top">
+          <div className="task-title-wrap">
             <p
-              className={`font-semibold text-slate-800 leading-snug line-clamp-2 ${completed ? 'line-through text-slate-400' : ''}`}
+              className={`task-title ${completed ? 'task-title-done' : ''}`}
             >
               {task.title}
             </p>
-            <p className="text-sm text-slate-500 mt-0.5 truncate">{task.course}</p>
+            <p className="task-course">{task.course}</p>
           </div>
 
-          {/* Kanan: badges */}
-          <div className="flex flex-col items-end gap-1.5 shrink-0">
-            <span className={`text-xs font-medium px-2 py-0.5 rounded-full border ${typeConf.color}`}>
+          <div className="task-badges">
+            <span className={`badge badge-type badge-${typeConf.tone}`}>
               {typeConf.label}
             </span>
             {urgencyConf.label && (
-              <span className={`text-xs font-medium px-2 py-0.5 rounded-full border ${urgencyConf.color}`}>
+              <span className={`badge badge-urgency badge-${urgencyConf.tone}`}>
                 {urgencyConf.label}
               </span>
             )}
           </div>
         </div>
 
-        {/* Deadline */}
-        <div className="mt-3 flex items-center gap-1.5 text-xs text-slate-500">
-          <svg className="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-          </svg>
+        <div className="task-deadline">
+          <CalendarClock size={15} aria-hidden="true" />
           <span>{deadlineLabel}</span>
           {relativeTime && (
-            <span className={`ml-1 font-medium ${task.isOverdue ? 'text-orange-500' : task.isDueToday ? 'text-red-500' : 'text-slate-400'}`}>
-              · {relativeTime}
+            <span className="task-relative">
+              {relativeTime}
             </span>
           )}
         </div>
 
-        {/* Tombol aksi */}
-        <div className="mt-3 flex items-center gap-2">
+        <div className="task-actions">
           {task.url && (
             <a
               href={task.url}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-1 text-xs font-medium text-blue-600 hover:text-blue-700 bg-blue-50 hover:bg-blue-100 border border-blue-200 px-2.5 py-1 rounded-md transition-colors"
+              className="task-link"
             >
-              <svg className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-              </svg>
+              <ExternalLink size={13} aria-hidden="true" />
               Buka di SCELE
             </a>
           )}
           {onToggleDone && (
             <button
               onClick={() => onToggleDone(id)}
-              className={`inline-flex items-center gap-1 text-xs font-medium px-2.5 py-1 rounded-md border transition-colors ${
-                completed
-                  ? 'text-slate-500 bg-slate-50 hover:bg-slate-100 border-slate-200'
-                  : 'text-green-600 bg-green-50 hover:bg-green-100 border-green-200'
-              }`}
+              className={`done-button ${completed ? 'done-button-cancel' : ''}`}
             >
-              <svg className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-              </svg>
+              {completed ? <RotateCcw size={13} aria-hidden="true" /> : <Check size={13} aria-hidden="true" />}
               {completed ? 'Batalkan' : 'Mark as Done'}
             </button>
           )}

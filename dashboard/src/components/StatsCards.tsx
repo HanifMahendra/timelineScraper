@@ -13,9 +13,7 @@ interface Props {
 interface StatItem {
   label: string;
   value: number;
-  colorClass: string;
-  bgClass: string;
-  icon: string;
+  tone: string;
 }
 
 export default function StatsCards({ timeline, completedIds = new Set(), completedCount = 0 }: Props) {
@@ -29,45 +27,35 @@ export default function StatsCards({ timeline, completedIds = new Set(), complet
     {
       label: 'Total Tugas',
       value: total,
-      colorClass: 'text-slate-700',
-      bgClass: 'bg-slate-50 border-slate-200',
-      icon: '📋',
+      tone: 'total',
     },
     {
       label: 'Upcoming',
       value: activeUpcoming.length,
-      colorClass: activeUpcoming.length > 0 ? 'text-blue-600' : 'text-slate-500',
-      bgClass: activeUpcoming.length > 0 ? 'bg-blue-50 border-blue-200' : 'bg-slate-50 border-slate-200',
-      icon: '📅',
+      tone: 'upcoming',
     },
     {
       label: 'Overdue',
       value: currentOverdue.length,
-      colorClass: currentOverdue.length > 0 ? 'text-orange-600' : 'text-slate-500',
-      bgClass: currentOverdue.length > 0 ? 'bg-orange-50 border-orange-200' : 'bg-slate-50 border-slate-200',
-      icon: '⚠️',
+      tone: 'overdue',
     },
     {
       label: 'Selesai',
       value: completedCount,
-      colorClass: completedCount > 0 ? 'text-green-600' : 'text-slate-500',
-      bgClass: completedCount > 0 ? 'bg-green-50 border-green-200' : 'bg-slate-50 border-slate-200',
-      icon: '✅',
+      tone: 'completed',
     },
   ];
 
   return (
-    <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+    <div className="stats-grid">
       {stats.map((s) => (
-        <Card key={s.label} className={`border ${s.bgClass} shadow-none`}>
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between mb-1">
-              <span className="text-xs font-medium text-slate-500 uppercase tracking-wide">
-                {s.label}
-              </span>
-              <span className="text-base">{s.icon}</span>
+        <Card key={s.label} className={`stat-card stat-card-${s.tone}`}>
+          <CardContent className="stat-card-content">
+            <div className="stat-card-top">
+              <span>{s.label}</span>
+              <i aria-hidden="true" />
             </div>
-            <p className={`text-3xl font-bold ${s.colorClass}`}>{s.value}</p>
+            <p>{s.value}</p>
           </CardContent>
         </Card>
       ))}

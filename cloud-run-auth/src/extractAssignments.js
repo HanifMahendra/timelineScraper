@@ -7,8 +7,10 @@ const WEEKLY_REFLECTION_PATTERN = /\bweekly\s+reflection\b/i;
 const NON_ACTIONABLE_TITLE_PATTERN = /^(?:deskripsi\s+kuliah|informasi\s+umum|sekilas\s+(?:tentang\s+)?sda)\b/i;
 
 const IGNORED_MODULE_PATTERN = /\/mod\/(?:resource|url|page|book|folder|label|forum|glossary|choice|feedback|survey|wiki|lesson|scorm|attendance|data)\//i;
+const ACTIONABLE_RESOURCE_MODULE_PATTERN = /\/mod\/(?:resource|url|page)\//i;
 const ASSIGN_MODULE_PATTERN = /\/mod\/assign(?:ment)?\//i;
 const QUIZ_MODULE_PATTERN = /\/mod\/quiz\//i;
+const ACTIONABLE_TEXT_PATTERN = /\b(?:tugas|assignment|penugasan|deadline|batas\s+pengumpulan|dikumpulkan\s+paling\s+lambat)\b/i;
 
 const MONTHS_ID = {
   januari: '01', februari: '02', maret: '03', april: '04',
@@ -112,10 +114,19 @@ function findActivityLinks(html) {
   return links;
 }
 
-function detectType({ text, url }) {
+function detectType({ text, url, deadlineISO }) {
   const haystack = `${text || ''} ${url || ''}`;
   if (WEEKLY_REFLECTION_PATTERN.test(text || '')) return 'assignment';
-  if (IGNORED_MODULE_PATTERN.test(url || '')) return null;
+  if (IGNORED_MODULE_PATTERN.test(url || '')) {
+    if (
+      ACTIONABLE_RESOURCE_MODULE_PATTERN.test(url || '') &&
+      deadlineISO &&
+      ASSIGNMENT_PATTERN.test(text || '')
+    ) {
+      return 'assignment';
+    }
+    return null;
+  }
   if (LAB_PATTERN.test(haystack)) return 'lab';
   if (QUIZ_MODULE_PATTERN.test(url || '') || QUIZ_PATTERN.test(text || '')) return 'quiz';
   if (ASSIGN_MODULE_PATTERN.test(url || '') || ASSIGNMENT_PATTERN.test(text || '')) return 'assignment';
@@ -141,6 +152,10 @@ function extractDeadlineText(text) {
   const dates = [...normalized.matchAll(DATE_TIME_RE)].map((m) => m[0]);
   if (OPEN_LABEL_RE.test(normalized) && dates.length > 1) return dates[dates.length - 1];
   return dates[0] || null;
+}
+
+function isActionableResourceBlock(block, url) {
+  return ACTIONABLE_RESOURCE_MODULE_PATTERN.test(url || '') && ACTIONABLE_TEXT_PATTERN.test(stripTags(block));
 }
 
 function parseCalendarTimeFromUrl(url) {
@@ -191,7 +206,9 @@ function buildItem({ block, title, url, courseName, courseUrl }) {
   const rawText = cleanText(rawDeadlineText);
   const candidateText = cleanText([title, rawText, url].filter(Boolean).join(' '));
   const isWeeklyReflection = courseName === 'Sistem Interaksi' && WEEKLY_REFLECTION_PATTERN.test(candidateText);
-  const type = detectType({ text: candidateText, url });
+  const deadlineText = extractDeadlineText(rawDeadlineText);
+  const deadlineISO = parseDeadline(deadlineText) || parseNumericDateDeadline(deadlineText);
+  const type = detectType({ text: candidateText, url, deadlineISO });
   if (!ACTIVITY_TYPES.has(type)) return null;
   const finalTitle = cleanTitle(
     title ||
@@ -201,8 +218,6 @@ function buildItem({ block, title, url, courseName, courseUrl }) {
   );
   if (!finalTitle || finalTitle.length < 3) return null;
   if (NON_ACTIONABLE_TITLE_PATTERN.test(finalTitle)) return null;
-  const deadlineText = extractDeadlineText(rawDeadlineText);
-  const deadlineISO = parseDeadline(deadlineText) || parseNumericDateDeadline(deadlineText);
   if (!deadlineISO && !isWeeklyReflection) return null;
   if (isWeeklyReflection && !deadlineISO) return null;
   return {
@@ -224,7 +239,12 @@ export function extractFromHtml(htmlContent, courseName, courseUrl) {
     const block = match[1];
     const links = findActivityLinks(block);
     const isWeeklyReflectionBlock = courseName === 'Sistem Interaksi' && WEEKLY_REFLECTION_PATTERN.test(stripTags(block));
-    const usableLinks = links.filter((link) => !IGNORED_MODULE_PATTERN.test(link.href) || isWeeklyReflectionBlock);
+    const usableLinks = links.filter(
+      (link) =>
+        !IGNORED_MODULE_PATTERN.test(link.href) ||
+        isWeeklyReflectionBlock ||
+        isActionableResourceBlock(block, link.href)
+    );
     if (links.length > 0 && usableLinks.length === 0) continue;
     const primaryLink =
       usableLinks.find((link) => ASSIGN_MODULE_PATTERN.test(link.href) || QUIZ_MODULE_PATTERN.test(link.href)) ||

@@ -1,9 +1,13 @@
 'use client';
 
 import { FormEvent, useEffect, useState } from 'react';
+import { LogOut, RefreshCw } from 'lucide-react';
 import {
+  browserLocalPersistence,
+  browserSessionPersistence,
   User,
   onAuthStateChanged,
+  setPersistence,
   signInWithCustomToken,
   signOut,
 } from 'firebase/auth';
@@ -11,15 +15,23 @@ import { getFirebaseAuth } from '@/lib/firebase';
 import { loginWithScele, logoutScele } from '@/lib/authApi';
 import { triggerScrape, fetchUserTimeline } from '@/lib/timelineApi';
 import DashboardClient from '@/app/DashboardClient';
+import ThemeSwitcher from './ThemeSwitcher';
 import type { TimelineData } from '@/types/task';
 
 const EMPTY_TIMELINE: TimelineData = { today: [], upcoming: [], overdue: [] };
+const REMEMBER_KEY = 'my-timeline-remember-login';
+
+function getStoredRememberLogin(): boolean {
+  if (typeof window === 'undefined') return false;
+  return window.localStorage.getItem(REMEMBER_KEY) === 'true';
+}
 
 export default function AuthGate() {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
+  const [remember, setRemember] = useState(getStoredRememberLogin);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [timeline, setTimeline] = useState<TimelineData>(EMPTY_TIMELINE);
@@ -41,8 +53,10 @@ export default function AuthGate() {
         }
       });
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Firebase belum terkonfigurasi.');
-      setLoading(false);
+      queueMicrotask(() => {
+        setError(err instanceof Error ? err.message : 'Firebase belum terkonfigurasi.');
+        setLoading(false);
+      });
     }
     return () => unsubscribe?.();
   }, []);
@@ -71,6 +85,8 @@ export default function AuthGate() {
     try {
       const customToken = await loginWithScele(username, password);
       const auth = getFirebaseAuth();
+      await setPersistence(auth, remember ? browserLocalPersistence : browserSessionPersistence);
+      window.localStorage.setItem(REMEMBER_KEY, remember ? 'true' : 'false');
       const credential = await signInWithCustomToken(auth, customToken);
       setPassword('');
       await handleScrape(credential.user);
@@ -91,95 +107,146 @@ export default function AuthGate() {
 
   if (loading) {
     return (
-      <div className="rounded-lg border border-slate-200 bg-white px-4 py-3 text-sm text-slate-500">
-        Memeriksa sesi...
+      <div className="app-screen app-screen-dashboard">
+        <div className="app-bg app-bg-dashboard" />
+        <div className="loading-card">
+          <span className="sync-dot" />
+          Memeriksa sesi...
+        </div>
       </div>
     );
   }
 
   if (!user) {
     return (
-      <form
-        onSubmit={handleLogin}
-        className="mx-auto max-w-sm rounded-lg border border-slate-200 bg-white p-5 shadow-sm"
-      >
-        <div className="mb-4">
-          <h2 className="text-base font-semibold text-slate-900">Login SCELE</h2>
-          <p className="mt-1 text-sm text-slate-500">
-            Gunakan username dan password SCELE.
-          </p>
+      <div className="app-screen app-screen-login">
+        <div className="app-bg app-bg-login" />
+        <div className="login-theme-control">
+          <ThemeSwitcher />
         </div>
 
-        <label className="mb-3 block">
-          <span className="mb-1 block text-sm font-medium text-slate-700">Username</span>
-          <input
-            value={username}
-            onChange={(e) => setUsername(e.target.value)}
-            autoComplete="username"
-            className="h-10 w-full rounded-md border border-slate-200 px-3 text-sm outline-none focus:border-slate-400"
-            required
-          />
-        </label>
+        <div className="login-layout">
+          <section className="login-brand" aria-label="My Timeline">
+            <p className="brand-kicker">Automated SCELE Deadline Tracker</p>
+            <h1 className="brand-title">My Timeline</h1>
+            <p className="brand-subtitle">Masuk dengan akun SCELE kamu</p>
+          </section>
 
-        <label className="mb-4 block">
-          <span className="mb-1 block text-sm font-medium text-slate-700">Password</span>
-          <input
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            type="password"
-            autoComplete="current-password"
-            className="h-10 w-full rounded-md border border-slate-200 px-3 text-sm outline-none focus:border-slate-400"
-            required
-          />
-        </label>
+          <form onSubmit={handleLogin} className="login-card">
+            <div className="login-card-line" />
+            <div className="mb-5">
+              <h2 className="panel-title">My Timeline</h2>
+              <p className="panel-subtitle">Automated SCELE Deadline Tracker</p>
+            </div>
 
-        {error && (
-          <p className="mb-3 rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
-            {error}
-          </p>
-        )}
+            <label className="form-field">
+              <span>Username</span>
+              <input
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                autoComplete="username"
+                placeholder="Username SCELE"
+                required
+              />
+            </label>
 
-        <button
-          type="submit"
-          disabled={submitting}
-          className="h-10 w-full rounded-md bg-slate-900 px-4 text-sm font-semibold text-white transition-colors hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
-        >
-          {submitting ? 'Login...' : 'Login'}
-        </button>
-      </form>
+            <label className="form-field">
+              <span>Password</span>
+              <input
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                type="password"
+                autoComplete="current-password"
+                placeholder="Password SCELE"
+                required
+              />
+            </label>
+
+            <label className="remember-row">
+              <input
+                type="checkbox"
+                checked={remember}
+                onChange={(e) => setRemember(e.target.checked)}
+              />
+              <span>Ingat saya</span>
+            </label>
+
+            {error && <p className="form-error">{error}</p>}
+
+            <button type="submit" disabled={submitting} className="primary-action">
+              {submitting ? 'Masuk...' : 'Masuk'}
+            </button>
+          </form>
+        </div>
+      </div>
     );
   }
 
+  const displayName = user.displayName || user.email || user.uid;
+  const taskCount = timeline.today.length + timeline.upcoming.length + timeline.overdue.length;
+
   return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between gap-3 rounded-lg border border-slate-200 bg-white px-4 py-3">
-        <p className="text-sm text-slate-600">
-          Login sebagai <span className="font-semibold text-slate-800">{user.displayName || user.uid}</span>
-        </p>
-        <div className="flex gap-2">
-          <button
-            onClick={() => handleScrape(user)}
-            disabled={scraping}
-            className="rounded-md border border-slate-200 bg-white px-3 py-1.5 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-50 disabled:opacity-60"
-          >
-            {scraping ? 'Memuat...' : 'Refresh'}
-          </button>
-          <button
-            onClick={handleLogout}
-            className="rounded-md border border-slate-200 bg-white px-3 py-1.5 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-50"
-          >
-            Logout
-          </button>
-        </div>
+    <div className="app-screen app-screen-dashboard">
+      <div className="app-bg app-bg-dashboard" />
+      <div className="dashboard-shell">
+        <aside className="dashboard-sidebar">
+          <div className="sidebar-logo">
+            <div className="logo-mark">MT</div>
+            <div>
+              <p className="sidebar-title">My Timeline</p>
+              <p className="sidebar-subtitle">SCELE Tracker</p>
+            </div>
+          </div>
+
+          <div className="sync-panel">
+            <div className="sync-panel-top">
+              <span>Sinkronisasi</span>
+              <button onClick={() => handleScrape(user)} disabled={scraping}>
+                <RefreshCw size={13} className={scraping ? 'animate-spin' : ''} />
+                {scraping ? 'Syncing' : 'Sync'}
+              </button>
+            </div>
+            <p>
+              <span className="sync-dot" />
+              {scrapeStatus || `Snapshot memuat ${taskCount} item SCELE`}
+            </p>
+          </div>
+
+          <div className="sidebar-user">
+            <div className="user-avatar">{displayName.slice(0, 1).toUpperCase()}</div>
+            <div className="min-w-0">
+              <p>{displayName}</p>
+              <span>Mahasiswa UI</span>
+            </div>
+          </div>
+        </aside>
+
+        <section className="dashboard-main">
+          <header className="dashboard-header">
+            <div className="min-w-0">
+              <p className="brand-kicker">Automated SCELE Deadline Tracker</p>
+              <h1 className="dashboard-title">Timeline Tugas</h1>
+              <p className="dashboard-subtitle">Data diambil langsung dari SCELE</p>
+            </div>
+
+            <div className="dashboard-actions">
+              <ThemeSwitcher compact />
+              <button onClick={() => handleScrape(user)} disabled={scraping} className="ghost-action">
+                <RefreshCw size={15} className={scraping ? 'animate-spin' : ''} />
+                {scraping ? 'Memuat' : 'Refresh'}
+              </button>
+              <button onClick={handleLogout} className="ghost-action ghost-action-danger">
+                <LogOut size={15} />
+                Logout
+              </button>
+            </div>
+          </header>
+
+          {scrapeStatus && <div className="status-banner">{scrapeStatus}</div>}
+
+          <DashboardClient timeline={timeline} />
+        </section>
       </div>
-
-      {scrapeStatus && (
-        <div className="rounded-lg border border-blue-200 bg-blue-50 px-4 py-2 text-sm text-blue-700">
-          {scrapeStatus}
-        </div>
-      )}
-
-      <DashboardClient timeline={timeline} />
     </div>
   );
 }

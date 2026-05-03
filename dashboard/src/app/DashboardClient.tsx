@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo } from 'react';
 import StatsCards from '@/components/StatsCards';
 import Filters from '@/components/Filters';
 import TimelineSection from '@/components/TimelineSection';
@@ -36,20 +36,21 @@ function sortByDeadline(tasks: Task[]): Task[] {
   });
 }
 
+function getStoredCompletedIds(): Set<string> {
+  if (typeof window === 'undefined') return new Set();
+  try {
+    const stored = window.localStorage.getItem(LS_KEY);
+    return stored ? new Set(JSON.parse(stored) as string[]) : new Set();
+  } catch {
+    return new Set();
+  }
+}
+
 export default function DashboardClient({ timeline }: Props) {
   const [filter, setFilter] = useState<FilterType>('all');
   const [search, setSearch] = useState('');
   const [selectedCourse, setSelectedCourse] = useState('all');
-  const [completedIds, setCompletedIds] = useState<Set<string>>(new Set());
-
-  useEffect(() => {
-    try {
-      const stored = localStorage.getItem(LS_KEY);
-      if (stored) setCompletedIds(new Set(JSON.parse(stored) as string[]));
-    } catch {
-      // localStorage tidak tersedia atau data korup — abaikan
-    }
-  }, []);
+  const [completedIds, setCompletedIds] = useState<Set<string>>(getStoredCompletedIds);
 
   function toggleDone(taskId: string) {
     setCompletedIds((prev) => {
@@ -149,10 +150,10 @@ export default function DashboardClient({ timeline }: Props) {
   );
 
   return (
-    <div className="space-y-6">
-      <div className="rounded-xl bg-white border border-slate-200 px-4 py-3">
-        <p className="text-sm text-slate-600 leading-relaxed">
-          <span className="font-semibold text-slate-800">Ringkasan: </span>
+    <div className="dashboard-content">
+      <div className="summary-card">
+        <p>
+          <span>Ringkasan: </span>
           {summary}
         </p>
       </div>
@@ -177,7 +178,7 @@ export default function DashboardClient({ timeline }: Props) {
       {useFlat ? (
         <TimelineSection
           title={search ? `Hasil pencarian "${search}"` : `Filter: ${filter}`}
-          icon="🔍"
+          tone="search"
           tasks={filtered}
           emptyMessage="Tidak ada tugas yang cocok dengan filter ini."
           completedIds={completedIds}
@@ -187,32 +188,32 @@ export default function DashboardClient({ timeline }: Props) {
         <>
           <TimelineSection
             title="Hari Ini"
-            icon="🔴"
+            tone="today"
             tasks={todayFiltered}
-            emptyMessage="Tidak ada tugas yang jatuh tempo hari ini. Nikmati harimu! 🎉"
+            emptyMessage="Tidak ada tugas yang jatuh tempo hari ini."
             completedIds={completedIds}
             onToggleDone={toggleDone}
           />
           <TimelineSection
             title="Upcoming"
-            icon="📅"
+            tone="upcoming"
             tasks={upcomingFiltered}
-            emptyMessage="Tidak ada tugas mendatang. Santai dulu! ✌️"
+            emptyMessage="Tidak ada tugas mendatang."
             completedIds={completedIds}
             onToggleDone={toggleDone}
           />
           <TimelineSection
             title="Overdue"
-            icon="⚠️"
+            tone="overdue"
             tasks={overdueFiltered}
-            emptyMessage="Tidak ada tugas yang terlambat. Keren! 🏆"
+            emptyMessage="Tidak ada tugas yang terlambat."
             completedIds={completedIds}
             onToggleDone={toggleDone}
           />
           {completedFiltered.length > 0 && (
             <TimelineSection
               title="Selesai"
-              icon="✅"
+              tone="completed"
               tasks={completedFiltered}
               emptyMessage=""
               completedIds={completedIds}

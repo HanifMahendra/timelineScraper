@@ -17,6 +17,15 @@ export const metadata: Metadata = {
   description: "Dashboard timeline tugas SCELE.",
 };
 
+const themeInitScript = `
+try {
+  var theme = localStorage.getItem('my-timeline-theme') === 'cyberpunk' ? 'cyberpunk' : 'anime';
+  document.documentElement.dataset.theme = theme;
+} catch (_) {
+  document.documentElement.dataset.theme = 'anime';
+}
+`;
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -25,8 +34,13 @@ export default function RootLayout({
   return (
     <html
       lang="en"
+      data-theme="anime"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+      suppressHydrationWarning
     >
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
+      </head>
       <body className="min-h-full flex flex-col">{children}</body>
     </html>
   );
