@@ -1,19 +1,5 @@
 {
-  "today": [
-    {
-      "title": "Weekly Reflection Topik 11",
-      "type": "assignment",
-      "course": "Sistem Interaksi",
-      "deadlineText": "Reminder: 3-5-2026, 23:59",
-      "deadlineISO": "2026-05-03T23:59:00+07:00",
-      "url": "",
-      "rawText": "Weekly Reflection Topik 11 synthetic reminder",
-      "synthetic": true,
-      "isOverdue": false,
-      "isDueToday": true,
-      "isDueSoon": false
-    }
-  ],
+  "today": [],
   "upcoming": [
     {
       "title": "Tugas Individu 3 (TI03) - Advanced Query Assignment",
