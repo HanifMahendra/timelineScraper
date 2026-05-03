@@ -5,6 +5,8 @@ auth.json
 !.env.example
 !**/.env.example
 serviceAccount*.json
+.firebase/
+timeline-scele-auth/
 data/html/
 data/text/
 data/scheduler.log

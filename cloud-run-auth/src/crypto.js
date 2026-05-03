@@ -30,3 +30,14 @@ export function encryptJson(value) {
     data: encrypted.toString('base64'),
   };
 }
+
+export function decryptJson(encryptedObj) {
+  const key = getKey();
+  const iv = Buffer.from(encryptedObj.iv, 'base64');
+  const tag = Buffer.from(encryptedObj.tag, 'base64');
+  const data = Buffer.from(encryptedObj.data, 'base64');
+  const decipher = crypto.createDecipheriv(ALGORITHM, key, iv);
+  decipher.setAuthTag(tag);
+  const decrypted = Buffer.concat([decipher.update(data), decipher.final()]);
+  return JSON.parse(decrypted.toString('utf8'));
+}

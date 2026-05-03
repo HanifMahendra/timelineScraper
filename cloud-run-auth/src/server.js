@@ -2,9 +2,12 @@ import crypto from 'crypto';
 import cors from 'cors';
 import express from 'express';
 import { FieldValue } from 'firebase-admin/firestore';
-import { encryptJson } from './crypto.js';
+import { encryptJson, decryptJson } from './crypto.js';
 import { getAuth, getFirestore } from './firebaseAdmin.js';
 import { loginToScele } from './scele.js';
+import { scrapeUserCourses } from './scrapeScele.js';
+import { extractAllAssignments } from './extractAssignments.js';
+import { buildTimeline } from './buildTimeline.js';
 
 const app = express();
 const port = Number(process.env.PORT || 8080);
@@ -89,6 +92,41 @@ app.post('/auth/login', async (req, res) => {
 app.post('/auth/logout', requireFirebaseUser, async (req, res) => {
   await getFirestore().collection('sceleSessions').doc(req.user.uid).delete();
   res.json({ ok: true });
+});
+
+app.post('/scrape', requireFirebaseUser, async (req, res) => {
+  const uid = req.user.uid;
+  const db = getFirestore();
+
+  const sessionDoc = await db.collection('sceleSessions').doc(uid).get();
+  if (!sessionDoc.exists) {
+    res.status(404).json({ error: 'Sesi SCELE tidak ditemukan. Silakan login ulang.' });
+    return;
+  }
+
+  let storageState;
+  try {
+    storageState = decryptJson(sessionDoc.data().storageState);
+  } catch {
+    res.status(500).json({ error: 'Gagal mendekripsi sesi SCELE.' });
+    return;
+  }
+
+  try {
+    const scrapeResults = await scrapeUserCourses(storageState);
+    const assignments = extractAllAssignments(scrapeResults);
+    const timeline = buildTimeline(assignments);
+
+    await db.collection('userTimelines').doc(uid).set({
+      ...timeline,
+      scrapedAt: FieldValue.serverTimestamp(),
+    });
+
+    res.json({ ok: true, courses: scrapeResults.length, assignments: assignments.length });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : 'Scrape SCELE gagal.';
+    res.status(500).json({ error: message });
+  }
 });
 
 app.listen(port, () => {

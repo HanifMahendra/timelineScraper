@@ -1,6 +1,6 @@
 'use client';
 
-import { FormEvent, ReactNode, useEffect, useState } from 'react';
+import { FormEvent, useEffect, useState } from 'react';
 import {
   User,
   onAuthStateChanged,
@@ -9,44 +9,71 @@ import {
 } from 'firebase/auth';
 import { getFirebaseAuth } from '@/lib/firebase';
 import { loginWithScele, logoutScele } from '@/lib/authApi';
+import { triggerScrape, fetchUserTimeline } from '@/lib/timelineApi';
+import DashboardClient from '@/app/DashboardClient';
+import type { TimelineData } from '@/types/task';
 
-interface Props {
-  children: ReactNode;
-}
+const EMPTY_TIMELINE: TimelineData = { today: [], upcoming: [], overdue: [] };
 
-export default function AuthGate({ children }: Props) {
+export default function AuthGate() {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [timeline, setTimeline] = useState<TimelineData>(EMPTY_TIMELINE);
+  const [scraping, setScraping] = useState(false);
+  const [scrapeStatus, setScrapeStatus] = useState<string | null>(null);
 
   useEffect(() => {
     let unsubscribe: (() => void) | undefined;
     try {
       const auth = getFirebaseAuth();
-      unsubscribe = onAuthStateChanged(auth, (nextUser) => {
+      unsubscribe = onAuthStateChanged(auth, async (nextUser) => {
         setUser(nextUser);
         setLoading(false);
+        if (nextUser) {
+          const cached = await fetchUserTimeline(nextUser.uid);
+          if (cached) setTimeline(cached);
+        } else {
+          setTimeline(EMPTY_TIMELINE);
+        }
       });
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Firebase belum terkonfigurasi.');
       setLoading(false);
     }
-
     return () => unsubscribe?.();
   }, []);
+
+  async function handleScrape(currentUser: User) {
+    setScraping(true);
+    setScrapeStatus('Sedang mengambil data SCELE...');
+    try {
+      const idToken = await currentUser.getIdToken();
+      await triggerScrape(idToken);
+      setScrapeStatus('Memuat data...');
+      const fresh = await fetchUserTimeline(currentUser.uid);
+      if (fresh) setTimeline(fresh);
+      setScrapeStatus(null);
+    } catch (err) {
+      setScrapeStatus(err instanceof Error ? err.message : 'Scrape gagal.');
+    } finally {
+      setScraping(false);
+    }
+  }
 
   async function handleLogin(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setSubmitting(true);
     setError(null);
-
     try {
       const customToken = await loginWithScele(username, password);
-      await signInWithCustomToken(getFirebaseAuth(), customToken);
+      const auth = getFirebaseAuth();
+      const credential = await signInWithCustomToken(auth, customToken);
       setPassword('');
+      await handleScrape(credential.user);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Login gagal.');
     } finally {
@@ -59,6 +86,7 @@ export default function AuthGate({ children }: Props) {
     const token = user ? await user.getIdToken().catch(() => null) : null;
     if (token) await logoutScele(token).catch(() => undefined);
     await signOut(auth);
+    setTimeline(EMPTY_TIMELINE);
   }
 
   if (loading) {
@@ -86,7 +114,7 @@ export default function AuthGate({ children }: Props) {
           <span className="mb-1 block text-sm font-medium text-slate-700">Username</span>
           <input
             value={username}
-            onChange={(event) => setUsername(event.target.value)}
+            onChange={(e) => setUsername(e.target.value)}
             autoComplete="username"
             className="h-10 w-full rounded-md border border-slate-200 px-3 text-sm outline-none focus:border-slate-400"
             required
@@ -97,7 +125,7 @@ export default function AuthGate({ children }: Props) {
           <span className="mb-1 block text-sm font-medium text-slate-700">Password</span>
           <input
             value={password}
-            onChange={(event) => setPassword(event.target.value)}
+            onChange={(e) => setPassword(e.target.value)}
             type="password"
             autoComplete="current-password"
             className="h-10 w-full rounded-md border border-slate-200 px-3 text-sm outline-none focus:border-slate-400"
@@ -126,16 +154,32 @@ export default function AuthGate({ children }: Props) {
     <div className="space-y-4">
       <div className="flex items-center justify-between gap-3 rounded-lg border border-slate-200 bg-white px-4 py-3">
         <p className="text-sm text-slate-600">
-          Login sebagai <span className="font-semibold text-slate-800">{user.uid}</span>
+          Login sebagai <span className="font-semibold text-slate-800">{user.displayName || user.uid}</span>
         </p>
-        <button
-          onClick={handleLogout}
-          className="rounded-md border border-slate-200 bg-white px-3 py-1.5 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-50"
-        >
-          Logout
-        </button>
+        <div className="flex gap-2">
+          <button
+            onClick={() => handleScrape(user)}
+            disabled={scraping}
+            className="rounded-md border border-slate-200 bg-white px-3 py-1.5 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-50 disabled:opacity-60"
+          >
+            {scraping ? 'Memuat...' : 'Refresh'}
+          </button>
+          <button
+            onClick={handleLogout}
+            className="rounded-md border border-slate-200 bg-white px-3 py-1.5 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-50"
+          >
+            Logout
+          </button>
+        </div>
       </div>
-      {children}
+
+      {scrapeStatus && (
+        <div className="rounded-lg border border-blue-200 bg-blue-50 px-4 py-2 text-sm text-blue-700">
+          {scrapeStatus}
+        </div>
+      )}
+
+      <DashboardClient timeline={timeline} />
     </div>
   );
 }
