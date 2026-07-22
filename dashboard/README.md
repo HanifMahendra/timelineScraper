@@ -1,36 +1,138 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# My Timeline Dashboard
 
-## Getting Started
+Next.js dashboard for the automated SCELE deadline tracker. The dashboard signs users in through the SCELE auth backend, reads each user's timeline from Firebase/Firestore, and displays deadlines extracted from SCELE.
 
-First, run the development server:
+The authenticated dashboard also contains a separate manual grade tracker.
+Timeline data remains SCELE-derived; grade inputs are user-authored and stored
+through the authenticated backend API.
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+## Local Preview
+
+Use the webpack dev server. Avoid the default `npm run dev` unless you intentionally want Turbopack.
+
+```powershell
+npm run dev:webpack -- -p 3001
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open:
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```text
+http://localhost:3001
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Build
 
-## Learn More
+This app uses static export through `next.config.ts`:
 
-To learn more about Next.js, take a look at the following resources:
+```powershell
+npm run lint
+npm run build
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+The build output is generated into:
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+```text
+dashboard/out
+```
 
-## Deploy on Vercel
+Do not edit `out/` manually. Change files in `src/` or `public/`, then rebuild.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Deploy
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Deploy from the repo root, not from this `dashboard/` folder, because Firebase Hosting is configured in the root `firebase.json`.
+
+```powershell
+cd ..
+firebase deploy --only hosting --project timeline-automated-scraper
+```
+
+Firebase Hosting serves:
+
+```text
+dashboard/out
+```
+
+## Themes
+
+Theme state is stored in local storage with:
+
+```text
+my-timeline-theme
+```
+
+Available themes:
+
+- `glass`
+- `anime`
+- `cyberpunk`
+
+Theme background assets live in:
+
+```text
+public/backgrounds/
+```
+
+If a deployed background does not appear to change, hard refresh the browser. For stubborn browser/CDN cache, bump the cache-busting query string in `src/app/globals.css`, for example:
+
+```css
+url("/backgrounds/anime.png?v=20260518-2")
+```
+
+## Local Persistence
+
+The dashboard intentionally keeps some UI-only state in browser local storage:
+
+- `scele-completed-tasks`: task IDs marked as done.
+- `my-timeline-remember-login`: remember-login preference.
+- `my-timeline-profile:<uid>`: dashboard display name and profile photo for a specific Firebase/SCELE user.
+
+SCELE passwords must not be stored in frontend storage.
+
+## Grade Tracker
+
+Navigation contains:
+
+- `Timeline`: the existing SCELE deadline projection.
+- `Nilai`: manual gradebooks, categories, components, target calculations, and
+  scenario simulation.
+
+Grade CRUD uses `NEXT_PUBLIC_AUTH_API_BASE_URL` with the current Firebase ID
+token. The static dashboard does not use Server Actions or a Next.js API
+runtime.
+
+The UI distinguishes:
+
+- accumulated contribution against the final 100;
+- average on already graded weight;
+- pending score versus a real zero;
+- known remaining weight versus unknown weight;
+- actual score versus scenario assumption.
+
+An optional component link can reference one of at most 500 bounded activity
+snapshots belonging to the authenticated user, including a previously linked
+missing activity. It is display-only; no grade is scraped or copied from SCELE. See
+`../docs/GRADE_CALCULATION.md` for domain rules.
+
+Gradebook detail juga menyediakan wizard `Import CSV/XLSX`:
+
+```text
+upload → pilih sheet → mapping kolom → review/edit → konfirmasi → hasil
+```
+
+Wizard menerima `.csv` dan `.xlsx` sampai 5 MB sebagai pemeriksaan awal
+client. Backend tetap menjadi batas keamanan yang authoritative. Multiple
+sheet, mapping ambigu, category conflict, warning, row invalid, tindakan
+create/skip, dan pagination ditampilkan sebelum commit. Checkbox konfirmasi
+wajib aktif sebelum perubahan disimpan. Dashboard tidak mem-parsing workbook
+dan tidak menulis collection grade atau import draft langsung; semua operasi
+memakai Firebase ID token melalui backend API.
+
+Lihat `../docs/GRADE_IMPORT.md` untuk perilaku parser dan batas server.
+
+## Production errors
+
+API clients memvalidasi base origin, membedakan kegagalan offline/network,
+memakai pesan ramah untuk code yang dikenal, menyembunyikan raw body 5xx, dan
+menampilkan request ID backend yang dapat disalin. HTTP 401 memicu auth-expiry
+handling dan sign-out Firebase. Destructive writes tidak otomatis di-retry;
+import commit dan study apply tetap memakai token/version idempotency eksplisit.
