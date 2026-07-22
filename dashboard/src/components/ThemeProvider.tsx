@@ -3,7 +3,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useSyncExternalStore } from 'react';
 import type { ReactNode } from 'react';
 
-export type AppTheme = 'anime' | 'cyberpunk';
+export type AppTheme = 'glass' | 'anime' | 'cyberpunk';
 
 interface ThemeContextValue {
   theme: AppTheme;
@@ -16,8 +16,10 @@ const THEME_EVENT = 'my-timeline-theme-change';
 const ThemeContext = createContext<ThemeContextValue | null>(null);
 
 function getStoredTheme(): AppTheme {
-  if (typeof window === 'undefined') return 'anime';
-  return window.localStorage.getItem(THEME_KEY) === 'cyberpunk' ? 'cyberpunk' : 'anime';
+  if (typeof window === 'undefined') return 'glass';
+  const stored = window.localStorage.getItem(THEME_KEY);
+  if (stored === 'anime' || stored === 'cyberpunk' || stored === 'glass') return stored;
+  return 'glass';
 }
 
 function subscribeToTheme(callback: () => void) {
@@ -30,7 +32,7 @@ function subscribeToTheme(callback: () => void) {
 }
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
-  const theme = useSyncExternalStore<AppTheme>(subscribeToTheme, getStoredTheme, () => 'anime');
+  const theme = useSyncExternalStore<AppTheme>(subscribeToTheme, getStoredTheme, () => 'glass');
 
   const setTheme = useCallback((nextTheme: AppTheme) => {
     window.localStorage.setItem(THEME_KEY, nextTheme);
@@ -41,7 +43,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     return {
       theme,
       setTheme,
-      toggleTheme: () => setTheme(theme === 'anime' ? 'cyberpunk' : 'anime'),
+      toggleTheme: () => setTheme(theme === 'glass' ? 'anime' : theme === 'anime' ? 'cyberpunk' : 'glass'),
     };
   }, [setTheme, theme]);
 

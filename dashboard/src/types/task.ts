@@ -13,6 +13,17 @@ export interface Task {
   isOverdue: boolean;
   isDueToday: boolean;
   isDueSoon: boolean;
+  activityId?: string;
+  courseId?: string;
+  moduleType?: string;
+  identitySource?: 'moodle' | 'fallback';
+  contentHash?: string;
+  urlValid?: boolean;
+  changeState?: 'new' | 'unchanged' | 'changed' | 'reappeared';
+  lifecycleState?: 'active' | 'missing';
+  previousDeadlineISO?: string;
+  lastChangedAt?: string;
+  version?: number;
 }
 
 export interface TimelineData {

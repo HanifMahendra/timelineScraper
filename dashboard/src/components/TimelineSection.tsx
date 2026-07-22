@@ -1,6 +1,7 @@
 'use client';
 
 import TaskCard from './TaskCard';
+import { taskId as getTaskId } from '@/lib/timelineFilters';
 import type { Task } from '@/types/task';
 
 interface Props {
@@ -38,12 +39,11 @@ export default function TimelineSection({
       ) : (
         <div className="task-grid">
           {tasks.map((task, i) => {
-            const taskId = task.url || task.title;
             return (
               <TaskCard
                 key={`${task.url}-${i}`}
                 task={task}
-                completed={completedIds?.has(taskId) ?? false}
+                completed={completedIds?.has(getTaskId(task)) ?? false}
                 onToggleDone={onToggleDone}
               />
             );

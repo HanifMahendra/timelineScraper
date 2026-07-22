@@ -1,23 +1,23 @@
 interface LoginResponse {
   customToken: string;
 }
+import { getApiBaseUrl, networkApiError, safeErrorBody, SafeApiError } from './apiErrors';
 
 const AUTH_API_BASE_URL = process.env.NEXT_PUBLIC_AUTH_API_BASE_URL;
 
 export async function loginWithScele(username: string, password: string): Promise<string> {
-  if (!AUTH_API_BASE_URL) {
-    throw new Error('NEXT_PUBLIC_AUTH_API_BASE_URL belum di-set.');
-  }
+  const baseUrl = getApiBaseUrl(AUTH_API_BASE_URL);
 
-  const response = await fetch(`${AUTH_API_BASE_URL}/auth/login`, {
+  let response: Response;
+  try { response = await fetch(`${baseUrl}/auth/login`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ username, password }),
-  });
+  }); } catch (error) { throw networkApiError('Login SCELE gagal.', error); }
 
   const data = await response.json().catch(() => ({}));
   if (!response.ok) {
-    throw new Error(data.error || 'Login SCELE gagal.');
+    throw new SafeApiError(safeErrorBody(data), 'Login SCELE gagal.', response.status);
   }
 
   return (data as LoginResponse).customToken;
@@ -25,8 +25,9 @@ export async function loginWithScele(username: string, password: string): Promis
 
 export async function logoutScele(idToken: string): Promise<void> {
   if (!AUTH_API_BASE_URL) return;
+  const baseUrl = getApiBaseUrl(AUTH_API_BASE_URL);
 
-  await fetch(`${AUTH_API_BASE_URL}/auth/logout`, {
+  await fetch(`${baseUrl}/auth/logout`, {
     method: 'POST',
     headers: {
       Authorization: `Bearer ${idToken}`,
