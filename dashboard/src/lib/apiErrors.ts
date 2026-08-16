@@ -16,7 +16,7 @@ const KNOWN_MESSAGES: Record<string, string> = {
   CORS_ORIGIN_DENIED: 'Dashboard ini tidak diizinkan mengakses layanan.',
   SCELE_SESSION_NOT_FOUND: 'Sesi SCELE tidak ditemukan. Silakan masuk kembali.',
   SCELE_SESSION_UNAVAILABLE: 'Sesi SCELE tidak dapat digunakan. Silakan masuk kembali.',
-  NO_COURSES_FOUND: 'Tidak ada mata kuliah yang cocok dengan tahun akademik aktif. Timeline lama tetap dipertahankan.',
+  NO_COURSES_FOUND: 'Tidak ada mata kuliah yang sedang aktif dengan tahun ini',
   NO_TASKS_EXTRACTED: 'Mata kuliah ditemukan, tetapi tidak ada tugas berdeadline yang dapat diambil. Timeline lama tetap dipertahankan.',
   ALL_COURSES_FAILED: 'Semua mata kuliah gagal dibaca dari SCELE. Timeline lama tetap dipertahankan.',
   SCRAPE_FAILED: 'Sinkronisasi SCELE gagal. Timeline lama tetap dipertahankan.',
@@ -76,8 +76,7 @@ export function displayApiError(error: unknown, fallback: string): string {
   if (!(error instanceof Error)) return fallback;
   const apiError = error instanceof SafeApiError ? error : null;
   const issues = apiError?.issues?.map((issue) => issue.message).filter(Boolean).join(' ');
-  const request = apiError?.requestId ? ` ID permintaan: ${apiError.requestId} (dapat disalin).` : '';
-  return `${error.message}${issues ? ` ${issues}` : ''}${request}`;
+  return `${error.message}${issues ? ` ${issues}` : ''}`;
 }
 
 export function getApiBaseUrl(raw: string | undefined): string {

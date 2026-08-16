@@ -60,10 +60,10 @@ Theme state is stored in local storage with:
 my-timeline-theme
 ```
 
-The dashboard currently exposes a single `glass` theme with a calm pastel,
-macOS-inspired visual system. The previous `anime` and `cyberpunk` assets and
-CSS remain in the repository for possible future reactivation, but stored
-preferences are normalized to `glass` and no theme selector is rendered.
+The dashboard exposes `light` and `dark` themes with a neutral,
+macOS-inspired visual system. The selected preference is normalized to one of
+those values and can be changed from the login window or dashboard toolbar.
+The previous `anime` and `cyberpunk` assets remain inactive.
 
 Theme background assets live in:
 
@@ -132,6 +132,6 @@ Lihat `../docs/GRADE_IMPORT.md` untuk perilaku parser dan batas server.
 
 API clients memvalidasi base origin, membedakan kegagalan offline/network,
 memakai pesan ramah untuk code yang dikenal, menyembunyikan raw body 5xx, dan
-menampilkan request ID backend yang dapat disalin. HTTP 401 memicu auth-expiry
+menyimpan request ID backend pada object error tanpa menampilkannya di UI. HTTP 401 memicu auth-expiry
 handling dan sign-out Firebase. Destructive writes tidak otomatis di-retry;
 import commit dan study apply tetap memakai token/version idempotency eksplisit.

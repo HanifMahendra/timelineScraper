@@ -1031,14 +1031,6 @@
     text-transform: uppercase;
   }
 
-  .stat-card-top i {
-    width: 8px;
-    height: 8px;
-    border-radius: 999px;
-    background: var(--accent);
-    box-shadow: 0 0 12px var(--accent);
-  }
-
   .stat-card p {
     color: var(--text);
     font-family: var(--font-display);
@@ -2874,7 +2866,127 @@
   }
 }
 
-/* Scheduler: single-theme macOS-inspired visual system. */
+/* Scheduler light/dark themes. Legacy visual themes stay inactive. */
+@layer components {
+  [data-theme="light"] .theme-root {
+    color-scheme: light;
+    --font-display: var(--font-geist-sans), -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", sans-serif;
+    --bg-image: none;
+    --panel: rgba(255, 255, 255, 0.82);
+    --panel-strong: rgba(248, 250, 252, 0.94);
+    --panel-soft: rgba(30, 58, 86, 0.06);
+    --panel-border: rgba(27, 43, 61, 0.14);
+    --text: #172033;
+    --text-soft: #344054;
+    --text-muted: #667085;
+    --accent: #315f92;
+    --accent-2: #527aa4;
+    --accent-3: #177e96;
+    --danger: #b42318;
+    --warning: #8a6100;
+    --success: #16794b;
+    --button: #315f92;
+    --button-hover: #244b76;
+    --button-shadow: transparent;
+    --radius-panel: 17px;
+    --radius-control: 12px;
+    --glow: none;
+    --panel-shadow: 0 12px 34px rgba(15, 23, 42, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.82);
+    --app-background:
+      radial-gradient(circle at 13% 13%, rgba(255, 255, 255, 0.92), transparent 31%),
+      radial-gradient(circle at 88% 84%, rgba(116, 145, 176, 0.2), transparent 35%),
+      linear-gradient(145deg, #e7ebf0 0%, #d9e0e8 48%, #e9edf2 100%);
+    --app-effects:
+      radial-gradient(circle at 76% 18%, rgba(255, 255, 255, 0.72), transparent 28%),
+      radial-gradient(circle at 18% 84%, rgba(49, 95, 146, 0.11), transparent 30%);
+    --window-background: rgba(250, 252, 254, 0.76);
+    --window-bar-background: rgba(255, 255, 255, 0.42);
+    --window-shadow: 0 30px 90px rgba(15, 23, 42, 0.16), inset 0 1px 0 rgba(255, 255, 255, 0.88);
+    --brand-background:
+      radial-gradient(circle at 18% 8%, rgba(255, 255, 255, 0.9), transparent 31%),
+      linear-gradient(145deg, rgba(224, 232, 241, 0.94), rgba(205, 216, 228, 0.76));
+    --card-background: rgba(255, 255, 255, 0.7);
+    --sidebar-background: rgba(233, 239, 245, 0.82);
+    --main-background: rgba(250, 252, 254, 0.58);
+    --surface-background: rgba(255, 255, 255, 0.54);
+    --surface-hover: rgba(255, 255, 255, 0.82);
+    --surface-active: rgba(49, 95, 146, 0.11);
+    --input-background: rgba(255, 255, 255, 0.68);
+    --input-focus-background: rgba(255, 255, 255, 0.94);
+    --option-background: #ffffff;
+    --modal-background: rgba(250, 252, 254, 0.96);
+    --backdrop-background: rgba(15, 23, 42, 0.26);
+    --error-background: rgba(180, 35, 24, 0.08);
+    --error-text: #912018;
+    --warning-background: rgba(138, 97, 0, 0.09);
+    --success-background: rgba(22, 121, 75, 0.08);
+    --stat-total: #2864b2;
+    --stat-upcoming: #147c91;
+    --stat-overdue: #bc3f37;
+    --stat-completed: #23805a;
+  }
+
+  [data-theme="dark"] .theme-root {
+    color-scheme: dark;
+    --font-display: var(--font-geist-sans), -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", sans-serif;
+    --bg-image: none;
+    --panel: rgba(24, 32, 44, 0.9);
+    --panel-strong: rgba(17, 24, 35, 0.96);
+    --panel-soft: rgba(255, 255, 255, 0.06);
+    --panel-border: rgba(226, 232, 240, 0.13);
+    --text: #f3f6fa;
+    --text-soft: #d2d9e3;
+    --text-muted: #98a4b5;
+    --accent: #78a9dc;
+    --accent-2: #91b7dc;
+    --accent-3: #56aec0;
+    --danger: #ff7b72;
+    --warning: #e9b949;
+    --success: #55c28b;
+    --button: #3977b6;
+    --button-hover: #4b8ac9;
+    --button-shadow: transparent;
+    --radius-panel: 17px;
+    --radius-control: 12px;
+    --glow: none;
+    --panel-shadow: 0 14px 38px rgba(0, 0, 0, 0.28), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+    --app-background:
+      radial-gradient(circle at 13% 12%, rgba(68, 91, 119, 0.22), transparent 31%),
+      radial-gradient(circle at 88% 84%, rgba(31, 86, 126, 0.16), transparent 35%),
+      linear-gradient(145deg, #0b111a 0%, #111a26 50%, #0b121c 100%);
+    --app-effects:
+      radial-gradient(circle at 76% 18%, rgba(91, 131, 171, 0.12), transparent 28%),
+      radial-gradient(circle at 18% 84%, rgba(28, 74, 111, 0.13), transparent 30%);
+    --window-background: rgba(15, 22, 32, 0.86);
+    --window-bar-background: rgba(22, 30, 42, 0.72);
+    --window-shadow: 0 30px 90px rgba(0, 0, 0, 0.46), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+    --brand-background:
+      radial-gradient(circle at 18% 8%, rgba(100, 137, 176, 0.13), transparent 31%),
+      linear-gradient(145deg, rgba(28, 40, 56, 0.97), rgba(21, 31, 44, 0.92));
+    --card-background: rgba(18, 26, 37, 0.92);
+    --sidebar-background: rgba(18, 27, 39, 0.94);
+    --main-background: rgba(12, 19, 29, 0.68);
+    --surface-background: rgba(255, 255, 255, 0.055);
+    --surface-hover: rgba(255, 255, 255, 0.09);
+    --surface-active: rgba(120, 169, 220, 0.14);
+    --input-background: rgba(9, 15, 24, 0.68);
+    --input-focus-background: rgba(12, 20, 31, 0.94);
+    --option-background: #17202d;
+    --modal-background: rgba(18, 26, 37, 0.98);
+    --backdrop-background: rgba(0, 0, 0, 0.58);
+    --error-background: rgba(255, 123, 114, 0.12);
+    --error-text: #ffaaa3;
+    --warning-background: rgba(233, 185, 73, 0.11);
+    --success-background: rgba(85, 194, 139, 0.1);
+    --stat-total: #245999;
+    --stat-upcoming: #126c7e;
+    --stat-overdue: #9f3834;
+    --stat-completed: #1d6b4d;
+  }
+
+}
+
+/* Scheduler shared macOS-inspired layout. */
 @layer components {
   [data-theme="glass"] .theme-root {
     color-scheme: light;
@@ -2984,27 +3096,6 @@
     padding: 0 15px;
     font-size: 12px;
     font-weight: 650;
-  }
-
-  .window-controls {
-    display: flex;
-    gap: 7px;
-  }
-
-  .window-controls i {
-    width: 10px;
-    height: 10px;
-    border: 1px solid rgba(67, 47, 59, 0.12);
-    border-radius: 50%;
-    background: #d4a4aa;
-  }
-
-  .window-controls i:nth-child(2) {
-    background: #dcc58f;
-  }
-
-  .window-controls i:nth-child(3) {
-    background: #9dbda9;
   }
 
   .login-window-body {
@@ -3346,7 +3437,6 @@
   }
 
   .sync-dot,
-  .stat-card-top i,
   .timeline-section-dot {
     box-shadow: none;
   }
@@ -4328,5 +4418,314 @@
   .study-primary,
   .study-toolbar .ghost-action {
     width: 100%;
+  }
+}
+
+/* Keep theme surfaces last so the shared macOS layout cannot reintroduce the old pink palette. */
+@layer components {
+  [data-theme="light"] .theme-root,
+  [data-theme="dark"] .theme-root,
+  [data-theme="light"] .app-screen,
+  [data-theme="dark"] .app-screen {
+    background: var(--app-background);
+    color: var(--text);
+  }
+
+  [data-theme="light"] .app-bg,
+  [data-theme="dark"] .app-bg {
+    opacity: 1;
+    background: var(--app-effects);
+    filter: none;
+    transform: none;
+  }
+
+  [data-theme="light"] .app-bg::after,
+  [data-theme="dark"] .app-bg::after {
+    background: transparent;
+  }
+
+  .login-window {
+    border-color: var(--panel-border);
+    background: var(--window-background);
+    box-shadow: var(--window-shadow);
+  }
+
+  .login-window-bar {
+    background: var(--window-bar-background);
+    color: var(--text-muted);
+  }
+
+  .login-brand {
+    background: var(--brand-background);
+  }
+
+  .login-brand-mark,
+  .login-feature-list > div {
+    border-color: var(--panel-border);
+    background: var(--surface-background);
+    box-shadow: none;
+  }
+
+  .login-brand .brand-subtitle {
+    margin-top: 14px;
+  }
+
+  .login-card,
+  .settings-modal {
+    background: var(--modal-background);
+  }
+
+  .form-field input,
+  .themed-input,
+  .themed-select,
+  .grade-field input,
+  .grade-field select,
+  .study-inline-form input,
+  .study-catalog-box select,
+  .study-preference-grid input,
+  .study-preference-grid select,
+  .study-plan-form input,
+  .study-topic-actions select,
+  .study-actual-minutes input {
+    border-color: var(--panel-border);
+    background: var(--input-background);
+    color: var(--text);
+  }
+
+  .form-field input:focus,
+  .themed-input:focus-visible,
+  .themed-select:focus,
+  .grade-field input:focus,
+  .grade-field select:focus,
+  .study-inline-form input:focus,
+  .study-catalog-box select:focus,
+  .study-preference-grid input:focus,
+  .study-preference-grid select:focus,
+  .study-plan-form input:focus,
+  .study-topic-actions select:focus {
+    background: var(--input-focus-background);
+  }
+
+  .themed-select option,
+  .grade-field select option,
+  .study-catalog-box select option,
+  .study-preference-grid select option,
+  .study-topic-actions select option {
+    background: var(--option-background);
+    color: var(--text);
+  }
+
+  .form-error,
+  .grade-error,
+  .study-error {
+    border-color: color-mix(in srgb, var(--danger) 38%, transparent);
+    background: var(--error-background);
+    color: var(--error-text);
+  }
+
+  .primary-action,
+  .grade-primary,
+  .study-primary {
+    background: var(--button);
+    color: #ffffff;
+    box-shadow: none;
+  }
+
+  .primary-action:hover:not(:disabled),
+  .grade-primary:hover:not(:disabled),
+  .study-primary:hover:not(:disabled) {
+    background: var(--button-hover);
+    box-shadow: none;
+  }
+
+  .theme-toggle {
+    white-space: nowrap;
+  }
+
+  .theme-toggle-compact {
+    width: 32px;
+    min-height: 30px;
+    justify-self: end;
+    padding: 0;
+  }
+
+  .login-window-bar .theme-toggle {
+    border-color: transparent;
+    background: transparent;
+  }
+
+  .dashboard-shell {
+    border-color: var(--panel-border);
+    background: var(--window-background);
+    box-shadow: var(--window-shadow);
+  }
+
+  .dashboard-sidebar {
+    background: var(--sidebar-background);
+    box-shadow: inset -1px 0 0 var(--panel-border);
+  }
+
+  .logo-mark {
+    background: var(--accent);
+    color: #ffffff;
+    box-shadow: none;
+  }
+
+  .sidebar-user,
+  .sync-panel,
+  .sidebar-deadline,
+  .sidebar-courses,
+  .ghost-action,
+  .mobile-area-navigation {
+    border-color: var(--panel-border);
+    background: var(--surface-background);
+  }
+
+  .sidebar-user:hover,
+  .sidebar-navigation button:hover,
+  .ghost-action:hover:not(:disabled) {
+    border-color: color-mix(in srgb, var(--accent) 28%, transparent);
+    background: var(--surface-hover);
+  }
+
+  .sidebar-navigation button[aria-pressed="true"],
+  .sidebar-course-button[aria-pressed="true"],
+  .mobile-area-navigation button[aria-pressed="true"],
+  .filter-pill[aria-pressed="true"] {
+    border-color: color-mix(in srgb, var(--accent) 24%, transparent);
+    background: var(--surface-active);
+    color: var(--accent);
+    box-shadow: none;
+  }
+
+  .user-avatar {
+    color: #ffffff;
+    box-shadow: none;
+    letter-spacing: -0.04em;
+  }
+
+  .user-avatar-blue { background: #3478b8; }
+  .user-avatar-teal { background: #23858a; }
+  .user-avatar-indigo { background: #596fb3; }
+  .user-avatar-amber { background: #a96f22; }
+  .user-avatar-green { background: #36805d; }
+
+  .dashboard-main {
+    background: var(--main-background);
+    scrollbar-color: color-mix(in srgb, var(--accent) 28%, transparent) transparent;
+  }
+
+  .dashboard-header {
+    position: static;
+    top: auto;
+    margin: 0 0 18px;
+    border-bottom-color: var(--panel-border);
+    background: transparent;
+    padding: 2px 0 14px;
+    backdrop-filter: none;
+  }
+
+  .loading-card,
+  .summary-card,
+  .filters-panel,
+  .sync-panel,
+  .sidebar-courses,
+  .status-banner,
+  .empty-panel,
+  .settings-modal,
+  .task-card,
+  .grade-loading,
+  .grade-toolbar,
+  .grade-detail-header,
+  .grade-panel,
+  .grade-empty,
+  .gradebook-card,
+  .grade-metric,
+  .grade-target,
+  .grade-warnings,
+  .grade-category-results,
+  .grade-breakdown,
+  .grade-complete-note,
+  .study-loading,
+  .study-toolbar,
+  .study-panel {
+    border-color: var(--panel-border);
+    background: var(--panel);
+    color: var(--text);
+    box-shadow: var(--panel-shadow);
+  }
+
+  .theme-root .summary-card,
+  .theme-root .filters-panel,
+  .theme-root .empty-panel,
+  .theme-root [data-slot="card"].task-card {
+    border-color: var(--panel-border) !important;
+    background: var(--panel) !important;
+    color: var(--text) !important;
+  }
+
+  .theme-root [data-slot="card"].stat-card {
+    border-color: color-mix(in srgb, white 18%, transparent) !important;
+    background: var(--stat-color) !important;
+    color: #ffffff !important;
+    box-shadow: 0 8px 20px color-mix(in srgb, var(--stat-color) 24%, transparent);
+  }
+
+  .stat-card-total { --stat-color: var(--stat-total); }
+  .stat-card-upcoming { --stat-color: var(--stat-upcoming); }
+  .stat-card-overdue { --stat-color: var(--stat-overdue); }
+  .stat-card-completed { --stat-color: var(--stat-completed); }
+
+  .stat-card::before {
+    content: none;
+  }
+
+  .stat-card-top {
+    margin-bottom: 8px;
+  }
+
+  .stat-card-top span,
+  .stat-card p {
+    color: #ffffff;
+  }
+
+  .stat-card-top span {
+    opacity: 0.86;
+  }
+
+  .task-card:hover,
+  .gradebook-card:hover {
+    box-shadow: 0 12px 28px color-mix(in srgb, var(--text) 9%, transparent);
+  }
+
+  .task-link,
+  .done-button,
+  .settings-profile-preview,
+  .study-subject-list > button,
+  .study-plan-list > button,
+  .study-topic-list article,
+  .study-session-day article,
+  .study-resource-list a,
+  .study-preview-summary > div {
+    border-color: var(--panel-border);
+    background: var(--surface-background);
+  }
+
+  .done-button {
+    border-color: color-mix(in srgb, var(--success) 28%, transparent);
+    background: var(--success-background);
+  }
+
+  .settings-backdrop {
+    background: var(--backdrop-background);
+  }
+
+  .status-banner-warning {
+    background: var(--warning-background);
+  }
+
+  .status-banner-error,
+  .sync-status-error {
+    background: var(--error-background);
   }
 }

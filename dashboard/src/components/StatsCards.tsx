@@ -53,7 +53,6 @@ export default function StatsCards({ timeline, completedIds = new Set(), complet
           <CardContent className="stat-card-content">
             <div className="stat-card-top">
               <span>{s.label}</span>
-              <i aria-hidden="true" />
             </div>
             <p>{s.value}</p>
           </CardContent>

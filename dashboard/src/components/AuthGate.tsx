@@ -30,6 +30,7 @@ import type { Task, TimelineData } from '@/types/task';
 import GradeTracker from '@/features/grades/GradeTracker';
 import StudyPlanner from '@/features/study/StudyPlanner';
 import { AUTH_EXPIRED_EVENT, displayApiError } from '@/lib/apiErrors';
+import ThemeSwitcher from '@/components/ThemeSwitcher';
 
 const EMPTY_TIMELINE: TimelineData = { today: [], upcoming: [], overdue: [] };
 const REMEMBER_KEY = 'my-timeline-remember-login';
@@ -87,6 +88,35 @@ function getStoredProfile(uid: string, fallbackName: string): LocalProfile {
   } catch {
     return { name: safeFallbackName, photo: '' };
   }
+}
+
+function initializeProfileFromLogin(uid: string, username: string): LocalProfile {
+  const safeUsername = limitProfileName(username.trim()) || uid;
+  const storedProfile = getStoredProfile(uid, safeUsername);
+  const nextProfile = {
+    ...storedProfile,
+    name: storedProfile.name === uid ? safeUsername : storedProfile.name,
+  };
+  try {
+    window.localStorage.setItem(profileKey(uid), JSON.stringify(nextProfile));
+  } catch {
+    // The in-memory profile still uses the login username when storage is unavailable.
+  }
+  return nextProfile;
+}
+
+function getProfileInitials(name: string): string {
+  const parts = name.trim().split(/[\s._-]+/).filter(Boolean);
+  if (parts.length > 1) {
+    return `${Array.from(parts[0])[0] ?? ''}${Array.from(parts[1])[0] ?? ''}`.toUpperCase();
+  }
+  return Array.from(parts[0] || '?').slice(0, 2).join('').toUpperCase();
+}
+
+function getAvatarTone(name: string): string {
+  let hash = 0;
+  for (const character of name) hash = (hash * 31 + character.codePointAt(0)!) >>> 0;
+  return ['blue', 'teal', 'indigo', 'amber', 'green'][hash % 5];
 }
 
 function getAllTasks(timeline: TimelineData): Task[] {
@@ -224,6 +254,7 @@ export default function AuthGate() {
       await setPersistence(auth, remember ? browserLocalPersistence : browserSessionPersistence);
       window.localStorage.setItem(REMEMBER_KEY, remember ? 'true' : 'false');
       const credential = await signInWithCustomToken(auth, customToken);
+      setProfile(initializeProfileFromLogin(credential.user.uid, username));
       setPassword('');
       await handleScrape(credential.user);
     } catch (err) {
@@ -301,10 +332,10 @@ export default function AuthGate() {
 
         <div className="login-layout">
           <section className="login-window" aria-label="Scheduler">
-            <div className="login-window-bar" aria-hidden="true">
-              <div className="window-controls"><i /><i /><i /></div>
+            <div className="login-window-bar">
+              <span aria-hidden="true" />
               <span>Scheduler</span>
-              <span />
+              <ThemeSwitcher compact />
             </div>
 
             <div className="login-window-body">
@@ -313,7 +344,6 @@ export default function AuthGate() {
                   <CalendarDays size={26} aria-hidden="true" />
                 </div>
                 <p className="login-brand-name">Scheduler</p>
-                <h1>Semester yang lebih teratur.</h1>
                 <p className="brand-subtitle">
                   Deadline SCELE, catatan nilai, dan rencana belajar dalam satu ruang akademik pribadi.
                 </p>
@@ -382,6 +412,8 @@ export default function AuthGate() {
 
   const fallbackName = limitProfileName(user.displayName || user.email || user.uid);
   const displayName = limitProfileName(profile.name || fallbackName);
+  const avatarInitials = getProfileInitials(displayName);
+  const avatarTone = getAvatarTone(displayName);
   const allTasks = getAllTasks(timeline);
   const taskCount = allTasks.length;
   const courses = [...new Set(allTasks.map((task) => task.course))].sort((a, b) => a.localeCompare(b));
@@ -419,7 +451,6 @@ export default function AuthGate() {
             </div>
             <div>
               <p className="sidebar-title">Scheduler</p>
-              <p className="sidebar-subtitle">Workspace akademik</p>
             </div>
           </div>
 
@@ -429,12 +460,12 @@ export default function AuthGate() {
             onClick={() => setSettingsOpen(true)}
             aria-label={`Buka pengaturan profil ${displayName}`}
           >
-            <div className="user-avatar">
+            <div className={`user-avatar user-avatar-${avatarTone}`}>
               {profile.photo ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img src={profile.photo} alt="" />
               ) : (
-                displayName.slice(0, 1).toUpperCase()
+                avatarInitials
               )}
             </div>
             <div className="min-w-0">
@@ -541,6 +572,7 @@ export default function AuthGate() {
             </div>
 
             <div className="dashboard-actions">
+              <ThemeSwitcher />
               <button onClick={() => handleScrape(user)} disabled={scraping} className="ghost-action">
                 <RefreshCw size={15} className={scraping ? 'animate-spin' : ''} />
                 {scraping ? 'Memuat' : 'Refresh'}
@@ -618,12 +650,12 @@ export default function AuthGate() {
             </div>
 
             <div className="settings-profile-preview">
-              <div className="user-avatar settings-avatar">
+              <div className={`user-avatar settings-avatar user-avatar-${avatarTone}`}>
                 {profile.photo ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img src={profile.photo} alt="" />
                 ) : (
-                  displayName.slice(0, 1).toUpperCase()
+                  avatarInitials
                 )}
               </div>
               <div>

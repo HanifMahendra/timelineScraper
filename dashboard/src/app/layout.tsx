@@ -19,10 +19,14 @@ export const metadata: Metadata = {
 
 const themeInitScript = `
 try {
-  localStorage.setItem('my-timeline-theme', 'glass');
-  document.documentElement.dataset.theme = 'glass';
+  var storedTheme = localStorage.getItem('my-timeline-theme');
+  var theme = storedTheme === 'light' || storedTheme === 'dark'
+    ? storedTheme
+    : (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+  document.documentElement.dataset.theme = theme;
+  document.documentElement.classList.toggle('dark', theme === 'dark');
 } catch (_) {
-  document.documentElement.dataset.theme = 'glass';
+  document.documentElement.dataset.theme = 'light';
 }
 `;
 
@@ -34,7 +38,7 @@ export default function RootLayout({
   return (
     <html
       lang="id"
-      data-theme="glass"
+      data-theme="light"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
       suppressHydrationWarning
     >
