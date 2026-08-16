@@ -53,6 +53,54 @@ explicit verification limitation, not a failed smoke. The rollout used public
 health/readiness, unauthenticated-denial, CORS preflight, artifact, and
 control-plane verification only.
 
-No local Git commit was created. Deploying the Hugging Face Space inherently
-created the remote Space revision recorded above; the nested local checkout
-remains at the preserved baseline revision.
+At the time of the original 2026-07-22 rollout, no local Git commit was
+created. Deploying the Hugging Face Space inherently created the remote Space
+revision recorded above, while the nested local checkout still remained at
+the preserved baseline revision. The later GitHub publication and 2026-08-17
+follow-up below supersede that checkout state without changing the historical
+rollout evidence.
+
+## GitHub publication continuation
+
+The root repository was published without flattening the nested backend:
+
+| Item | Published state |
+| --- | --- |
+| Root repository | `https://github.com/HanifMahendra/timelineScraper` |
+| Root branch | `agent/release-timeline-grade-study` |
+| Draft pull request | `https://github.com/HanifMahendra/timelineScraper/pull/1` |
+| Initial structured commits | `f2785e1881161f13be3cf2e240cac51f45c58fd2`, `21e0b5217f5b4e0fc4a2053580e0b3e38909a374`, `09eba7e6743e29647a6d24bfa131b38e0fa30a1b` |
+| Backend GitHub repository | `https://github.com/HanifMahendra/timeline-scele-auth` (`PRIVATE`) |
+| Initial backend mirror | `cdef0ef4038aa02249e6f9d6af34708788f608d4` on GitHub and Hugging Face |
+
+`timeline-scele-auth/` remains ignored by and separate from the root
+repository. Its `origin` remote remains Hugging Face and its additional
+`github` remote points to the private GitHub repository. No force push or
+secret commit was used.
+
+## 2026-08-17 academic-year follow-up
+
+Status: `DEPLOYED_AND_VERIFIED_WITHOUT_AUTHENTICATED_SMOKE`
+
+The owner requested a fail-closed academic-year course gate and completion of
+the remaining publication work. The implementation uses the Asia/Jakarta
+calendar: January-June accepts `(year-1)/year`, and July-December accepts
+`year/(year+1)`. Filtering occurs before course navigation. Old, future, and
+unlabelled courses are skipped; no SCELE request was used to test the rule.
+
+| Stage | Result |
+| --- | --- |
+| Security gate | A new audit initially found dashboard/backend high findings, so deployment stopped. Explicit patch/same-major pins removed every high/critical finding; no forced audit fix or major upgrade was used. |
+| Validation | Aggregate tests `246/246`, emulator/Rules `7/7`, config/catalog, lint, TypeScript, static build, syntax, secret scan, and complete preflight passed. Dashboard production/full audits are zero; backend production/full audits retain only the eight owner-accepted moderate findings. |
+| Backend publication | Commits `606fca3` and `29cfda2` pushed to private GitHub and Hugging Face `main` without force. Local, GitHub, Hugging Face Git refs, and Space API all resolve to `29cfda2ccbd6894862a69dd8fbc3b20ad686dc1d`. |
+| Backend verification | Space returned to `RUNNING`; `/health`, `/healthz`, and `/ready` returned 200; readiness configuration, Firebase Admin, Firestore, and catalogs were `ok`; dashboard origin succeeded, unrelated-origin GET was denied 403, and an unauthenticated protected GET remained 401. |
+| Root publication | Commits `26401c8` and `3b97c5b` pushed to the existing draft PR branch. GitHub reported no configured status checks. |
+| Hosting | Static artifact differed after the Next.js patch, so Hosting alone was deployed. Live release `1786899858893000`, version `884ef983a8b09006`, is finalized; all 51 live files match `dashboard/out` byte-for-byte. |
+| Firestore | Rules were not deployed and remain ruleset `c3268691-ffdb-4cec-bad4-1b4eb3941442`, hash `EE47A3FD6C8573318C9CB3F9F4819611DA3D0B5E4181BA8F18F19D28F60A6B5A`. Index `CICAgOjXh4EK` remains `READY`. |
+
+The previous backend revision `cdef0ef4038aa02249e6f9d6af34708788f608d4`
+and Hosting release `1784709360283000` / version `0a22587d569ba185`
+remain the rollback baselines. No migration, recursive delete, mass cleanup,
+real-user data access, authenticated smoke, SCELE login, or SCELE scrape was
+performed. Authenticated smoke remains
+`NOT_EXECUTED_AUTH_REQUIRES_SCELE`; SCELE remains `NOT AUTHORIZED`.

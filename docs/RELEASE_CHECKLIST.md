@@ -19,3 +19,9 @@
 - [x] Production rollout had owner approval and completed as `DEPLOYED_AND_VERIFIED_WITHOUT_AUTHENTICATED_SMOKE`.
 - [x] No production SCELE login/scrape test was performed without separate explicit approval.
 - [x] `docs/STAGING_VERIFICATION_REPORT.md` reflects the observed blocked staging gate.
+- [x] Academic-year filter is tested at the Asia/Jakarta 1 July boundary and
+  rejects inactive/unlabelled courses before navigation.
+- [x] 2026-08-17 dependency refresh has zero dashboard findings and zero
+  backend high/critical findings; eight accepted backend moderate remain.
+- [x] Backend GitHub/Hugging Face revisions and Hosting artifact/release were
+  verified after the follow-up deployment.

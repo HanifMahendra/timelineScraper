@@ -1,11 +1,11 @@
 # Dependency Security
 
 Baseline captured on 2026-07-22 with npm 10 and Node 22. Root has zero
-findings. Dashboard production dependencies have zero findings. Dashboard's
-complete tree initially had 2 low, 3 moderate, and 2 high findings; safe
-same-major overrides for `fast-uri`, `js-yaml`, and `body-parser`, plus a
-transitive Babel patch, reduced that to 3 moderate findings, all
-development-only.
+findings. The dashboard production and complete trees both have zero findings
+after the 2026-08-16 refresh described below. The dashboard's complete tree
+initially had 2 low, 3 moderate, and 2 high findings; safe same-major overrides
+for `fast-uri`, `js-yaml`, and `body-parser`, plus a transitive Babel patch,
+first reduced that to 3 moderate development-only findings.
 During Phase 7, a newly published high-severity `sharp <0.35.0` advisory made
 the installed Next.js optional `sharp` 0.34.5 fail the production audit. A
 reviewed override to patched `sharp` 0.35.3 restored the dashboard production
@@ -13,6 +13,26 @@ audit to zero; lint, typecheck, static build, and runtime package resolution
 were revalidated. A second new advisory affecting `fast-uri <=3.1.3` was
 resolved with 3.1.4. The application has no `next/image` usage, but the audit
 gate is intentionally stricter than reachability analysis.
+
+On 2026-08-16 a new audit temporarily failed the rollout gate with two high
+dashboard production findings, additional high development-tool findings, and
+one high backend finding. No deployment occurred while high findings were
+present. Reviewed patch/same-major updates resolved them:
+
+- Next.js and `eslint-config-next` are pinned to 16.2.11, the minimum patched
+  release reported for the applicable Next.js advisories.
+- `postcss` 8.5.26, `nanoid` 3.3.18, `fast-uri` 3.1.5, `js-yaml` 4.3.1,
+  `undici` 7.29.0, `ip-address` 10.5.0, Hono 4.12.34, and
+  `@hono/node-server` 1.19.15 are pinned through same-major overrides.
+- Brace Expansion is patched within each consuming major: 1.1.18, 2.1.4, and
+  5.0.9. Parent-specific overrides avoid forcing incompatible major versions.
+
+After installation, dashboard production/full audits both report zero and the
+backend production/full audits report only the same eight moderate findings.
+The complete preflight, dashboard lint/type/static build, backend/root tests,
+emulator Rules integration, configuration/catalog checks, and secret scan all
+pass. No `npm audit fix`, `npm audit fix --force`, or major dependency upgrade
+was used.
 
 The backend initially had 2 low and 8 moderate findings. Patch overrides for
 `body-parser` 1.20.6 and `@tootallnate/once` 2.0.1 removed both lows. The 8
@@ -47,10 +67,12 @@ packages from the production installation.
 
 | Package/path | Scope | Action | Rationale |
 | --- | --- | --- | --- |
-| `fast-uri` 3.1.4, `js-yaml`, dashboard `body-parser`, Babel 7.29.7 | Transitive dev tooling | Patched/minor update | Same major, lockfile updated, lint/type/build pass. |
+| `fast-uri` 3.1.5, `js-yaml` 4.3.1, dashboard `body-parser`, Babel 7.29.7 | Transitive dev tooling | Patched/minor update | Same major, lockfile updated, lint/type/build pass. |
 | `sharp` | Next.js optional production dependency | Patched override to 0.35.3 | Upstream advisory affects versions before 0.35.0; package resolution and static build pass. |
+| Next.js 16.2.11, PostCSS 8.5.26, Nanoid 3.3.18 | Dashboard production/build chain | Patched update | Removes newly published high/moderate findings; static export remains the deployment model. |
+| Hono 4.12.34, Hono Node Server 1.19.15, Undici 7.29.0, IP Address 10.5.0 | `shadcn` development tooling | Same-major override | Not shipped as application runtime, but full audit remains a zero-finding gate. |
+| Brace Expansion 1.1.18/2.1.4/5.0.9 | Dashboard/backend transitive tooling | Parent-scoped patch override | Removes DoS advisories without crossing the consumers' expected major versions. |
 | backend `body-parser`, `@tootallnate/once` | Transitive runtime/optional | Patch override | No API change; backend and emulator tests pass. |
-| `@hono/node-server`, MCP SDK, `shadcn` | Transitive/direct dev CLI | Temporarily accepted | `shadcn` is not shipped in `dashboard/out`; audit proposes a major/downgrade path requiring compatibility work. |
 | `firebase-admin` 12 and Google Cloud chain (`firestore`, `storage`, `gaxios`, `google-gax`, `retry-request`, `teeny-request`, `uuid`) | Backend runtime/optional | Temporarily accepted | npm requires Firebase Admin major upgrade and several transitive majors. Firestore, transactions, Timestamp, custom token, emulator, and Admin initialization must be retested together. The service does not expose Google Cloud Storage routes. |
 
 No `npm audit fix --force` was run. No major dependency was changed. The only

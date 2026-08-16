@@ -311,10 +311,51 @@ findings accepted by the owner; no high or critical finding is present.
 The prior Rules ruleset, prior Hugging Face revision, and prior finalized
 Hosting version were all re-confirmed as still available after the rollout.
 
-No local Git commit, migration, recursive delete, mass cleanup, authenticated
-data-plane smoke, SCELE login, or SCELE scrape was performed. The Hugging Face
-deployment inherently produced the remote Space revision above while the local
-nested checkout stayed at its preserved baseline revision.
+At the time of the original rollout, no local Git commit, migration, recursive
+delete, mass cleanup, authenticated data-plane smoke, SCELE login, or SCELE
+scrape was performed. The Hugging Face deployment inherently produced the
+remote Space revision above while the local nested checkout stayed at its
+preserved baseline revision. Later GitHub publication and the 2026-08-17
+follow-up are recorded in section 20.
+
+## 20. GitHub publication and 2026-08-17 follow-up
+
+The separate repository topology is preserved:
+
+- root: `https://github.com/HanifMahendra/timelineScraper`, branch
+  `agent/release-timeline-grade-study`, draft PR
+  `https://github.com/HanifMahendra/timelineScraper/pull/1`;
+- backend: `https://github.com/HanifMahendra/timeline-scele-auth`, private
+  `main`, with Hugging Face retained as the separate `origin` remote.
+
+The academic-year follow-up filters SCELE course links before navigation. In
+Asia/Jakarta, January-June selects the previous/current year pair and
+July-December selects the current/next pair. Tests cover the 1 July boundary,
+full/abbreviated labels, explicit local metadata, and fail-closed rejection of
+old, future, or unlabelled courses. No SCELE login or scrape was used.
+
+The initial 2026-08-16 audit found newly published high findings and stopped
+the rollout. Explicit patch/same-major pins restored the required gate:
+dashboard production/full audits have zero findings, and backend
+production/full audits have eight moderate with zero high/critical. The owner
+acceptance for those eight moderate findings remains subject to review no later
+than 2026-08-22. No `npm audit fix`, forced fix, or major upgrade was used.
+
+Final observed production state:
+
+| Surface | Observed state |
+| --- | --- |
+| Backend | Revision `29cfda2ccbd6894862a69dd8fbc3b20ad686dc1d`, `RUNNING`; health/readiness 200 and all readiness checks `ok` |
+| Hosting | Release `1786899858893000`; version `884ef983a8b09006`, `FINALIZED`; 51/51 live files exactly match the local static export |
+| Rules | Unchanged ruleset `c3268691-ffdb-4cec-bad4-1b4eb3941442`; repository hash exact-match retained |
+| Index | `CICAgOjXh4EK` remains `READY` |
+| GitHub | Backend GitHub/Hugging Face/local refs match; root implementation through `3b97c5b` is pushed to draft PR #1; no GitHub checks are configured |
+
+The previous backend and Hosting revisions remain rollback baselines. No data
+migration, delete, cleanup, real-user access, authenticated smoke, SCELE login,
+or SCELE scrape occurred. Production status remains
+`DEPLOYED_AND_VERIFIED_WITHOUT_AUTHENTICATED_SMOKE` and authenticated smoke
+remains `NOT_EXECUTED_AUTH_REQUIRES_SCELE`.
 
 ## Context for controlled production rollout
 
