@@ -7,7 +7,7 @@ import { fileURLToPath } from 'node:url';
 import { validateStagingEnvironment } from '../scripts/staging-guard.mjs';
 import { runStagingSmoke } from '../scripts/smoke-staging.mjs';
 import { scanWorkspace } from '../scripts/secret-scan.mjs';
-import { runCommand, summarizeAudit, validateStaticRequirements } from '../scripts/preflight.mjs';
+import { auditWithinPolicy, runCommand, summarizeAudit, validateStaticRequirements } from '../scripts/preflight.mjs';
 import { isExpectedDemoEmulator } from '../scripts/run-emulator-tests.mjs';
 import { validateStagingReadiness } from '../scripts/staging-readiness.mjs';
 import { verifyStagingBuildOutput } from '../scripts/build-dashboard-staging.mjs';
@@ -140,6 +140,13 @@ test('preflight helpers report failing commands, malformed audits, missing confi
   assert.equal(validateStaticRequirements(missing).length > 0, true);
   fs.rmSync(missing, { recursive: true, force: true });
   assert.deepEqual(validateStaticRequirements(root), []);
+});
+
+test('dependency audit policy permits moderate findings and rejects high or critical findings in every scope', () => {
+  assert.equal(auditWithinPolicy({ info: 0, low: 0, moderate: 8, high: 0, critical: 0, total: 8 }), true);
+  assert.equal(auditWithinPolicy({ info: 0, low: 0, moderate: 0, high: 1, critical: 0, total: 1 }), false);
+  assert.equal(auditWithinPolicy({ info: 0, low: 0, moderate: 0, high: 0, critical: 1, total: 1 }), false);
+  assert.equal(auditWithinPolicy(null), false);
 });
 
 test('emulator cleanup guard only recognizes this repository demo process', () => {

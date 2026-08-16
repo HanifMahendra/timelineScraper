@@ -39,7 +39,7 @@ The backend initially had 2 low and 8 moderate findings. Patch overrides for
 remaining moderate findings are in the Firebase Admin 12 optional Google Cloud
 dependency chain and are present in the production audit.
 
-The finding was rechecked on 2026-07-22. Both `npm audit --omit=dev` and the
+The finding was rechecked again on 2026-08-17. Both `npm audit --omit=dev` and the
 full `npm audit` report the same eight moderate entries and no low, high, or
 critical finding. They roll up to `GHSA-w5hq-g745-h8pq`, a missing buffer
 bounds check in `uuid` v3/v5/v6 when a caller supplies a buffer. The installed
@@ -63,6 +63,16 @@ v3/v5/v6-with-buffer pattern. This makes the published exploit path not
 observed in the application flow, but it does not remove the vulnerable
 packages from the production installation.
 
+The 2026-08-17 technical review found no new runtime-relevant exploit path and
+the complete local preflight still passes. Temporary acceptance therefore
+remains technically justified under the existing controls through the owner
+review deadline; this review does not silently extend the owner's risk
+acceptance beyond 2026-08-22. npm's available remediation is Firebase Admin
+14.2.0, which requires Node.js 22+, removes legacy namespace support used by
+the current initialization code, and upgrades the Firestore dependency. It
+must remain a separately tested compatibility change rather than an automatic
+or forced fix.
+
 ## Triage
 
 | Package/path | Scope | Action | Rationale |
@@ -83,7 +93,8 @@ client 12.16.0 (Apache-2.0, Node 20 compatible) for Firestore Rules tests.
 
 1. Work on an isolated branch and record `npm audit --json` before/after.
 2. Use patch/minor changes first; review lockfile and `npm explain` paths.
-3. For Firebase Admin 13+, verify Admin app initialization, custom-token auth,
+3. For Firebase Admin 14+, migrate legacy namespace initialization and verify
+   the Docker image is running Node.js 22 or newer; then verify custom-token auth,
    Firestore Timestamp conversion, transactions, batch limits, emulator tests,
    and the Docker Node/runtime image.
 4. Run `npm test`, `npm run test:emulator`, dashboard lint/type/build, secret

@@ -67,6 +67,9 @@ implemented repository state, not deployment status.
 ### Fixed
 
 - Parser/body dependency advisories with safe patch releases were mitigated.
+- Full-tree dependency audits now fail preflight on either high or critical
+  findings instead of being informational-only; moderate backend findings
+  remain subject to the explicit owner risk decision.
 - Staging smoke health/readiness calls no longer send authentication, and a
   cleanup failure now fails the run with only created resource IDs.
 

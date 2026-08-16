@@ -54,6 +54,10 @@ export function summarizeAudit(raw) {
   }
 }
 
+export function auditWithinPolicy(summary) {
+  return Boolean(summary) && summary.high === 0 && summary.critical === 0;
+}
+
 const NPM_CLI = path.join(path.dirname(process.execPath), 'node_modules', 'npm', 'bin', 'npm-cli.js');
 function npmInvocation(args) { return { command: process.execPath, args: [NPM_CLI, ...args] }; }
 
@@ -107,7 +111,7 @@ function audit(root, label, cwd, args, output) {
   const summary = summarizeAudit(result.stdout);
   if (!summary) { output.error(`FAIL ${label}: audit JSON tidak dapat dibaca.`); return false; }
   output.log(`  ${JSON.stringify(summary)}`);
-  return summary.critical === 0 && (!(args.includes('--omit=dev')) || summary.high === 0);
+  return auditWithinPolicy(summary);
 }
 
 export async function runPreflight({ root, output = console, requireStaging = false } = {}) {
@@ -162,10 +166,11 @@ export async function runPreflight({ root, output = console, requireStaging = fa
   }
   if (!syntaxCheck(root, output)) criticalFailure = true;
   if (!audit(root, 'root production audit', root, ['--omit=dev'], output)) criticalFailure = true;
+  if (!audit(root, 'root full audit', root, [], output)) criticalFailure = true;
   if (!audit(root, 'dashboard production audit', dashboard, ['--omit=dev'], output)) criticalFailure = true;
-  audit(root, 'dashboard full audit', dashboard, [], output);
+  if (!audit(root, 'dashboard full audit', dashboard, [], output)) criticalFailure = true;
   if (!audit(root, 'backend production audit', backend, ['--omit=dev'], output)) criticalFailure = true;
-  audit(root, 'backend full audit', backend, [], output);
+  if (!audit(root, 'backend full audit', backend, [], output)) criticalFailure = true;
   if (requireStaging && !staging?.ok) output.error('BLOCKER dashboard staging static build dilewati karena target staging belum aman.');
   if (requireStaging) output.log(criticalFailure ? 'STAGING_BLOCKED' : 'READY_FOR_STAGING');
   else output.log(criticalFailure ? 'PREFLIGHT FAILED' : 'PREFLIGHT PASSED');
