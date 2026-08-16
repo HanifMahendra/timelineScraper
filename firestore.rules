@@ -1,0 +1,86 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /userTimelines/{uid} {
+      allow read: if request.auth != null && request.auth.uid == uid;
+      allow write: if false;
+    }
+
+    match /sceleSessions/{uid} {
+      allow read, write: if false;
+    }
+
+    match /scrapeRuns/{runId} {
+      allow read, write: if false;
+    }
+
+    match /users/{uid}/activities/{activityId} {
+      allow read: if request.auth != null && request.auth.uid == uid;
+      allow write: if false;
+
+      match /history/{historyId} {
+        allow read: if request.auth != null && request.auth.uid == uid;
+        allow write: if false;
+      }
+    }
+
+    match /users/{uid}/gradebooks/{gradebookId} {
+      allow read, write: if false;
+
+      match /importDrafts/{draftId} {
+        allow read, write: if false;
+
+        match /rows/{rowId} {
+          allow read, write: if false;
+        }
+      }
+
+      match /{gradeCollection}/{gradeDocumentId} {
+        allow read, write: if false;
+      }
+    }
+
+    // API-only: DAG, capacity, ownership, draft version, and apply-token
+    // validation must run in the authenticated backend.
+    match /users/{uid}/subjects/{subjectId} {
+      allow read, write: if false;
+
+      match /topics/{topicId} {
+        allow read, write: if false;
+      }
+    }
+
+    match /users/{uid}/studyPreferences/{preferenceId} {
+      allow read, write: if false;
+    }
+
+    match /users/{uid}/studyPlans/{planId} {
+      allow read, write: if false;
+
+      match /sessions/{sessionId} {
+        allow read, write: if false;
+      }
+    }
+
+    match /users/{uid}/studyPlanDrafts/{draftId} {
+      allow read, write: if false;
+
+      match /sessions/{sessionId} {
+        allow read, write: if false;
+      }
+    }
+
+    match /scrapeLocks/{uid} {
+      allow read, write: if false;
+    }
+
+    match /scrapeControls/{uid} {
+      allow read, write: if false;
+    }
+
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

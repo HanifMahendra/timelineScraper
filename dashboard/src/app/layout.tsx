@@ -19,10 +19,11 @@ export const metadata: Metadata = {
 
 const themeInitScript = `
 try {
-  var theme = localStorage.getItem('my-timeline-theme') === 'cyberpunk' ? 'cyberpunk' : 'anime';
+  var storedTheme = localStorage.getItem('my-timeline-theme');
+  var theme = ['glass', 'anime', 'cyberpunk'].indexOf(storedTheme) >= 0 ? storedTheme : 'glass';
   document.documentElement.dataset.theme = theme;
 } catch (_) {
-  document.documentElement.dataset.theme = 'anime';
+  document.documentElement.dataset.theme = 'glass';
 }
 `;
 
@@ -34,7 +35,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      data-theme="anime"
+      data-theme="glass"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
       suppressHydrationWarning
     >

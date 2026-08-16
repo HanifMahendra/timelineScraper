@@ -1,7 +1,8 @@
 import assert from 'node:assert/strict';
+import test from 'node:test';
 import { createRequire } from 'node:module';
-import { extractFromHtml as extractFromCloudHtml } from '../cloud-run-auth/src/extractAssignments.js';
-import { buildTimeline as buildCloudTimeline } from '../cloud-run-auth/src/buildTimeline.js';
+import { extractFromHtml as extractFromLiveHtml } from '../timeline-scele-auth/src/extractAssignments.js';
+import { buildTimeline as buildLiveTimeline } from '../timeline-scele-auth/src/buildTimeline.js';
 
 const require = createRequire(import.meta.url);
 const { extractFromHtml } = require('../src/extractAssignments.js');
@@ -29,23 +30,28 @@ function assertPkplResourceAssignment(items, sourceName) {
   assert.match(items[0].url, /\/mod\/resource\/view\.php\?id=12345$/);
 }
 
-assertPkplResourceAssignment(
-  extractFromHtml(fixture, 'Pengantar Keamanan Perangkat Lunak', 'https://scele.cs.ui.ac.id/course/view.php?id=0'),
-  'local extractor'
-);
+test('local and live extractors keep actionable SCELE resources', () => {
+  assertPkplResourceAssignment(
+    extractFromHtml(fixture, 'Pengantar Keamanan Perangkat Lunak', 'https://scele.cs.ui.ac.id/course/view.php?id=1'),
+    'local extractor'
+  );
 
-assertPkplResourceAssignment(
-  extractFromCloudHtml(fixture, 'Pengantar Keamanan Perangkat Lunak', 'https://scele.cs.ui.ac.id/course/view.php?id=0'),
-  'cloud extractor'
-);
+  assertPkplResourceAssignment(
+    extractFromLiveHtml(fixture, 'Pengantar Keamanan Perangkat Lunak', 'https://scele.cs.ui.ac.id/course/view.php?id=1'),
+    'live extractor'
+  );
+});
 
-const cloudItems = extractFromCloudHtml(
-  fixture,
-  'Pengantar Keamanan Perangkat Lunak',
-  'https://scele.cs.ui.ac.id/course/view.php?id=0'
-);
-const cloudTimeline = buildCloudTimeline(cloudItems);
-assert.equal(cloudTimeline.upcoming.length, 1, 'dashboard timeline should place the PKPL item in upcoming');
-assert.equal(cloudTimeline.upcoming[0].title, 'Tugas 3 - Secure Coding Practice');
+test('timeline regression uses an explicit reference time', () => {
+  const liveItems = extractFromLiveHtml(
+    fixture,
+    'Pengantar Keamanan Perangkat Lunak',
+    'https://scele.cs.ui.ac.id/course/view.php?id=1'
+  );
+  const timeline = buildLiveTimeline(liveItems, {
+    now: new Date('2026-05-01T00:00:00.000Z'),
+  });
 
-console.log('extractAssignments regression tests passed');
+  assert.equal(timeline.upcoming.length, 1);
+  assert.equal(timeline.upcoming[0].title, 'Tugas 3 - Secure Coding Practice');
+});

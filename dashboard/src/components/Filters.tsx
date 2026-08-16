@@ -7,18 +7,17 @@ import type { FilterType } from '@/types/task';
 interface Props {
   active: FilterType;
   search: string;
-  selectedCourse: string;
-  courses: string[];
+  sort: 'deadline' | 'course' | 'type';
   onFilterChange: (f: FilterType) => void;
   onSearchChange: (s: string) => void;
-  onCourseChange: (course: string) => void;
+  onSortChange: (sort: 'deadline' | 'course' | 'type') => void;
   counts: Record<FilterType, number>;
 }
 
 const FILTER_LABELS: { key: FilterType; label: string }[] = [
   { key: 'all',        label: 'Semua' },
   { key: 'today',      label: 'Hari ini' },
-  { key: 'overdue',    label: 'Overdue' },
+  { key: 'overdue',    label: 'Terlambat' },
   { key: 'assignment', label: 'Tugas' },
   { key: 'quiz',       label: 'Quiz' },
   { key: 'lab',        label: 'Lab' },
@@ -27,11 +26,10 @@ const FILTER_LABELS: { key: FilterType; label: string }[] = [
 export default function Filters({
   active,
   search,
-  selectedCourse,
-  courses,
+  sort,
   onFilterChange,
   onSearchChange,
-  onCourseChange,
+  onSortChange,
   counts,
 }: Props) {
   return (
@@ -48,16 +46,14 @@ export default function Filters({
         </div>
 
         <select
-          value={selectedCourse}
-          onChange={(e) => onCourseChange(e.target.value)}
+          value={sort}
+          onChange={(e) => onSortChange(e.target.value as 'deadline' | 'course' | 'type')}
           className="themed-select"
+          aria-label="Urutkan tugas"
         >
-          <option value="all">Semua kelas</option>
-          {courses.map((course) => (
-            <option key={course} value={course}>
-              {course}
-            </option>
-          ))}
+          <option value="deadline">Deadline terdekat</option>
+          <option value="course">Mata kuliah</option>
+          <option value="type">Tipe tugas</option>
         </select>
       </div>
 

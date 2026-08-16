@@ -1,4 +1,8 @@
 {
+  "firestore": {
+    "rules": "firestore.rules",
+    "indexes": "firestore.indexes.json"
+  },
   "hosting": {
     "public": "dashboard/out",
     "ignore": [
@@ -6,5 +10,14 @@
       "**/.*",
       "**/node_modules/**"
     ]
+  },
+  "emulators": {
+    "firestore": {
+      "host": "127.0.0.1",
+      "port": 8181
+    },
+    "ui": {
+      "enabled": false
+    }
   }
 }

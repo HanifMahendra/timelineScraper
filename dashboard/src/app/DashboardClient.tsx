@@ -10,9 +10,12 @@ import type { FilterType, Task, TimelineData } from '@/types/task';
 
 interface Props {
   timeline: TimelineData;
+  selectedCourse: string;
+  completedIds: Set<string>;
+  onToggleDone: (taskId: string) => void;
 }
 
-const LS_KEY = 'scele-completed-tasks';
+type SortType = 'deadline' | 'course' | 'type';
 
 function matchesFilter(task: Task, filter: FilterType): boolean {
   if (filter === 'all') return true;
@@ -36,38 +39,38 @@ function sortByDeadline(tasks: Task[]): Task[] {
   });
 }
 
-function getStoredCompletedIds(): Set<string> {
-  if (typeof window === 'undefined') return new Set();
-  try {
-    const stored = window.localStorage.getItem(LS_KEY);
-    return stored ? new Set(JSON.parse(stored) as string[]) : new Set();
-  } catch {
-    return new Set();
+function sortTasks(tasks: Task[], sort: SortType): Task[] {
+  if (sort === 'course') {
+    return [...tasks].sort((a, b) => a.course.localeCompare(b.course) || a.title.localeCompare(b.title));
   }
+  if (sort === 'type') {
+    return [...tasks].sort((a, b) => a.type.localeCompare(b.type) || a.title.localeCompare(b.title));
+  }
+  return sortByDeadline(tasks);
 }
 
-export default function DashboardClient({ timeline }: Props) {
+function getNearestDeadline(tasks: Task[], completedIds: Set<string>): Task | null {
+  const now = Date.now();
+  return sortByDeadline(
+    tasks.filter((task) => task.deadlineISO && !completedIds.has(taskId(task)) && new Date(task.deadlineISO).getTime() >= now)
+  )[0] ?? null;
+}
+
+function getRelativeDeadline(task: Task): string {
+  if (!task.deadlineISO) return 'tanpa deadline';
+  const diffMs = new Date(task.deadlineISO).getTime() - Date.now();
+  const diffHours = Math.ceil(diffMs / (1000 * 60 * 60));
+  if (diffHours <= 1) return 'kurang dari 1 jam lagi';
+  if (diffHours < 24) return `${diffHours} jam lagi`;
+  const diffDays = Math.ceil(diffHours / 24);
+  if (diffDays === 1) return 'besok';
+  return `${diffDays} hari lagi`;
+}
+
+export default function DashboardClient({ timeline, selectedCourse, completedIds, onToggleDone }: Props) {
   const [filter, setFilter] = useState<FilterType>('all');
   const [search, setSearch] = useState('');
-  const [selectedCourse, setSelectedCourse] = useState('all');
-  const [completedIds, setCompletedIds] = useState<Set<string>>(getStoredCompletedIds);
-
-  function toggleDone(taskId: string) {
-    setCompletedIds((prev) => {
-      const next = new Set(prev);
-      if (next.has(taskId)) {
-        next.delete(taskId);
-      } else {
-        next.add(taskId);
-      }
-      try {
-        localStorage.setItem(LS_KEY, JSON.stringify([...next]));
-      } catch {
-        // ignore
-      }
-      return next;
-    });
-  }
+  const [sort, setSort] = useState<SortType>('deadline');
 
   // Gabung semua tugas, hapus yang overdue >2 minggu
   const allTasks = useMemo(
@@ -78,11 +81,6 @@ export default function DashboardClient({ timeline }: Props) {
         )
       ),
     [timeline]
-  );
-
-  const courses = useMemo(
-    () => [...new Set(allTasks.map((task) => task.course))].sort((a, b) => a.localeCompare(b)),
-    [allTasks]
   );
 
   const courseTasks = useMemo(
@@ -127,8 +125,11 @@ export default function DashboardClient({ timeline }: Props) {
   }, [courseTasks, completedIds, search]);
 
   const filtered = useMemo(
-    () => courseTasks.filter((t) => matchesFilter(t, filter) && matchesSearch(t, search)),
-    [courseTasks, filter, search]
+    () => sortTasks(
+      courseTasks.filter((t) => matchesFilter(t, filter) && matchesSearch(t, search)),
+      sort
+    ),
+    [courseTasks, filter, search, sort]
   );
 
   const useFlat = filter !== 'all' || search.length > 0;
@@ -148,14 +149,27 @@ export default function DashboardClient({ timeline }: Props) {
     () => getWeeklySummary(courseTimeline, completedIds),
     [courseTimeline, completedIds]
   );
+  const nearestDeadline = useMemo(
+    () => getNearestDeadline(courseTasks, completedIds),
+    [courseTasks, completedIds]
+  );
 
   return (
     <div className="dashboard-content">
       <div className="summary-card">
-        <p>
-          <span>Ringkasan: </span>
-          {summary}
-        </p>
+        <div>
+          <span className="summary-label">Deadline terdekat</span>
+          <p>
+            {nearestDeadline
+              ? `${nearestDeadline.title} - ${getRelativeDeadline(nearestDeadline)}`
+              : 'Belum ada deadline aktif.'}
+          </p>
+        </div>
+        <div className="summary-divider" aria-hidden="true" />
+        <div>
+          <span className="summary-label">Ringkasan</span>
+          <p>{summary}</p>
+        </div>
       </div>
 
       <StatsCards
@@ -167,11 +181,10 @@ export default function DashboardClient({ timeline }: Props) {
       <Filters
         active={filter}
         search={search}
-        selectedCourse={selectedCourse}
-        courses={courses}
+        sort={sort}
         onFilterChange={setFilter}
         onSearchChange={setSearch}
-        onCourseChange={setSelectedCourse}
+        onSortChange={setSort}
         counts={counts}
       />
 
@@ -182,7 +195,7 @@ export default function DashboardClient({ timeline }: Props) {
           tasks={filtered}
           emptyMessage="Tidak ada tugas yang cocok dengan filter ini."
           completedIds={completedIds}
-          onToggleDone={toggleDone}
+          onToggleDone={onToggleDone}
         />
       ) : (
         <>
@@ -190,9 +203,9 @@ export default function DashboardClient({ timeline }: Props) {
             title="Hari Ini"
             tone="today"
             tasks={todayFiltered}
-            emptyMessage="Tidak ada tugas yang jatuh tempo hari ini."
+            emptyMessage="Aman untuk hari ini. Cek bagian mendatang untuk deadline berikutnya."
             completedIds={completedIds}
-            onToggleDone={toggleDone}
+            onToggleDone={onToggleDone}
           />
           <TimelineSection
             title="Upcoming"
@@ -200,7 +213,7 @@ export default function DashboardClient({ timeline }: Props) {
             tasks={upcomingFiltered}
             emptyMessage="Tidak ada tugas mendatang."
             completedIds={completedIds}
-            onToggleDone={toggleDone}
+            onToggleDone={onToggleDone}
           />
           <TimelineSection
             title="Overdue"
@@ -208,7 +221,7 @@ export default function DashboardClient({ timeline }: Props) {
             tasks={overdueFiltered}
             emptyMessage="Tidak ada tugas yang terlambat."
             completedIds={completedIds}
-            onToggleDone={toggleDone}
+            onToggleDone={onToggleDone}
           />
           {completedFiltered.length > 0 && (
             <TimelineSection
@@ -217,7 +230,7 @@ export default function DashboardClient({ timeline }: Props) {
               tasks={completedFiltered}
               emptyMessage=""
               completedIds={completedIds}
-              onToggleDone={toggleDone}
+              onToggleDone={onToggleDone}
             />
           )}
         </>

@@ -1,22 +1,27 @@
 [
   {
     "name": "Pemrograman Lanjut",
+    "academicYear": "2025/2026",
     "url": "https://scele.cs.ui.ac.id/course/view.php?id=4144"
   },
   {
     "name": "Basis Data",
+    "academicYear": "2025/2026",
     "url": "https://scele.cs.ui.ac.id/course/view.php?id=4129"
   },
   {
     "name": "Sistem Interaksi",
+    "academicYear": "2025/2026",
     "url": "https://scele.cs.ui.ac.id/course/view.php?id=4137"
   },
   {
     "name": "Statistika dan Probabilitas",
+    "academicYear": "2025/2026",
     "url": "https://scele.cs.ui.ac.id/course/view.php?id=4148"
   },
   {
     "name": "Struktur Data dan Algoritma",
+    "academicYear": "2025/2026",
     "url": "https://scele.cs.ui.ac.id/course/view.php?id=4138"
   }
 ]

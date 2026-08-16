@@ -30,12 +30,12 @@ export default function StatsCards({ timeline, completedIds = new Set(), complet
       tone: 'total',
     },
     {
-      label: 'Upcoming',
+      label: 'Mendatang',
       value: activeUpcoming.length,
       tone: 'upcoming',
     },
     {
-      label: 'Overdue',
+      label: 'Terlambat',
       value: currentOverdue.length,
       tone: 'overdue',
     },

@@ -19,11 +19,17 @@ const TYPE_CONFIG = {
 };
 
 const URGENCY_CONFIG = {
-  overdue:   { label: 'Overdue',  tone: 'overdue' },
+  overdue:   { label: 'Terlambat',  tone: 'overdue' },
   today:     { label: 'Hari ini', tone: 'today' },
   soon:      { label: 'Segera',   tone: 'soon' },
   normal:    { label: null,       tone: 'normal' },
   completed: { label: 'Selesai', tone: 'completed' },
+};
+
+const CHANGE_CONFIG = {
+  new:        { label: 'Baru',         tone: 'new' },
+  changed:    { label: 'Diperbarui',   tone: 'changed' },
+  reappeared: { label: 'Muncul Lagi',  tone: 'reappeared' },
 };
 
 type UrgencyKey = keyof typeof URGENCY_CONFIG;
@@ -65,6 +71,17 @@ function formatDeadlineID(task: Task): string {
   return `${day} ${month} ${year}, ${timeStr}`;
 }
 
+function formatHistoricalDeadlineID(deadlineISO: string): string {
+  const deadline = new Date(deadlineISO);
+  if (!Number.isFinite(deadline.getTime())) return deadlineISO;
+  const wib = new Date(deadline.getTime() + 7 * 60 * 60 * 1000);
+  const day = wib.getUTCDate();
+  const month = BULAN[wib.getUTCMonth()];
+  const year = wib.getUTCFullYear();
+  const time = wib.toISOString().slice(11, 16);
+  return `${day} ${month} ${year}, ${time}`;
+}
+
 function getRelativeTime(task: Task, completed: boolean): string | null {
   if (completed || !task.deadlineISO) return null;
 
@@ -95,11 +112,20 @@ function getRelativeTime(task: Task, completed: boolean): string | null {
 }
 
 export default function TaskCard({ task, completed = false, onToggleDone }: Props) {
+  if (task.lifecycleState === 'missing') return null;
+
   const urgency = getUrgency(task, completed);
   const typeConf = TYPE_CONFIG[task.type] ?? TYPE_CONFIG.other;
   const urgencyConf = URGENCY_CONFIG[urgency];
   const deadlineLabel = formatDeadlineID(task);
   const relativeTime = getRelativeTime(task, completed);
+  const changeConf =
+    task.changeState && task.changeState !== 'unchanged'
+      ? CHANGE_CONFIG[task.changeState]
+      : null;
+  const deadlineChanged =
+    Boolean(task.previousDeadlineISO) &&
+    task.previousDeadlineISO !== task.deadlineISO;
 
   const id = taskId(task);
 
@@ -127,6 +153,11 @@ export default function TaskCard({ task, completed = false, onToggleDone }: Prop
                 {urgencyConf.label}
               </span>
             )}
+            {changeConf && (
+              <span className={`badge badge-change badge-${changeConf.tone}`}>
+                {changeConf.label}
+              </span>
+            )}
           </div>
         </div>
 
@@ -140,8 +171,18 @@ export default function TaskCard({ task, completed = false, onToggleDone }: Prop
           )}
         </div>
 
+        {deadlineChanged && task.previousDeadlineISO && (
+          <div className="task-change-note">
+            <strong>Deadline diperbarui</strong>
+            <span>
+              Sebelumnya: {formatHistoricalDeadlineID(task.previousDeadlineISO)}
+            </span>
+            <span>Sekarang: {deadlineLabel}</span>
+          </div>
+        )}
+
         <div className="task-actions">
-          {task.url && (
+          {task.url && task.urlValid !== false && (
             <a
               href={task.url}
               target="_blank"
@@ -158,7 +199,7 @@ export default function TaskCard({ task, completed = false, onToggleDone }: Prop
               className={`done-button ${completed ? 'done-button-cancel' : ''}`}
             >
               {completed ? <RotateCcw size={13} aria-hidden="true" /> : <Check size={13} aria-hidden="true" />}
-              {completed ? 'Batalkan' : 'Mark as Done'}
+              {completed ? 'Batalkan' : 'Tandai selesai'}
             </button>
           )}
         </div>

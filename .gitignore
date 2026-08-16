@@ -4,6 +4,7 @@ auth.json
 .env.*
 !.env.example
 !**/.env.example
+!**/.env.staging.example
 serviceAccount*.json
 .firebase/
 timeline-scele-auth/
@@ -11,3 +12,4 @@ data/html/
 data/text/
 data/scheduler.log
 firebase-debug.log
+firestore-debug.log

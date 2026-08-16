@@ -1,0 +1,18 @@
+{
+  "projectId": "timeline-automated-scraper",
+  "capturedAt": "2026-07-22T07:31:12.2724448Z",
+  "rulesetIdentifier": "projects/timeline-automated-scraper/rulesets/c45fa16a-7594-474e-81d5-fe4f3bedf2c5",
+  "rulesetCreateTime": "2026-05-02T23:10:50.432239Z",
+  "sourceHash": "C40997A4E1910F148E430A7CE9E137402B320F77F933C88504EEE7E3D809BDD3",
+  "repositoryRulesSourceHash": "EE47A3FD6C8573318C9CB3F9F4819611DA3D0B5E4181BA8F18F19D28F60A6B5A",
+  "indexSourceHash": "51B7BE56A01633AC30EE35987EF4169A84B5E9A973DDC233F4D127C8166CCE4D",
+  "repositoryIndexSourceHash": "6294FB0862B8222586F9425C1EDEE5330109F7655603382533B3DFBBDB758B07",
+  "rulesComparison": "BEHAVIOR_CHANGE_REQUIRES_REVIEW",
+  "indexStatus": "VERIFIED_EMPTY",
+  "notes": [
+    "Captured read-only through the official Firebase Rules API used by Firebase CLI 15.1.0.",
+    "The deployed baseline permits own-user read/write on sceleSessions; repository Rules deny all direct client session access.",
+    "Repository Rules add own-user read-only access for activities and activity history; the deployed baseline denies these previously unmatched paths. This is required by the documented dashboard activity-option flow but remains a reviewable behavior change.",
+    "No Rules or index deployment was performed during capture."
+  ]
+}

@@ -1,0 +1,27 @@
+# Release Checklist
+
+- [ ] Version, `APP_VERSION`, build SHA/timestamp, and changelog reviewed.
+- [x] Worktree scope and nested backend status understood; owner changes preserved.
+- [x] Root/backend tests and backend syntax pass.
+- [x] Firestore emulator integration and Rules behavior tests pass on a demo project.
+- [x] Rules compile; index JSON parses and matches actual queries.
+- [x] Dashboard lint, TypeScript, and static build pass with target environment.
+- [x] Production configuration and exact origins validated.
+- [ ] `npm run preflight:staging` prints `READY_FOR_STAGING` for the exact isolated targets.
+- [x] Dependency production/full audits reviewed; accepted risks approved through 2026-08-22.
+- [x] Repeatable secret scan is clean.
+- [ ] Staging backend/dashboard deployed in the documented order.
+- [ ] Authenticated staging smoke and manual verification matrix pass.
+- [x] UI Timeline/Nilai/Belajar shell and request-ID behavior verified.
+- [ ] Firestore managed export/backup verified.
+- [x] Rollback artifact/commands, criteria, and owner are ready.
+- [x] Rules/index changes had explicit owner approval; no data migration was performed.
+- [x] Production rollout had owner approval and completed as `DEPLOYED_AND_VERIFIED_WITHOUT_AUTHENTICATED_SMOKE`.
+- [x] No production SCELE login/scrape test was performed without separate explicit approval.
+- [x] `docs/STAGING_VERIFICATION_REPORT.md` reflects the observed blocked staging gate.
+- [x] Academic-year filter is tested at the Asia/Jakarta 1 July boundary and
+  rejects inactive/unlabelled courses before navigation.
+- [x] 2026-08-17 dependency refresh has zero dashboard findings and zero
+  backend high/critical findings; eight accepted backend moderate remain.
+- [x] Backend GitHub/Hugging Face revisions and Hosting artifact/release were
+  verified after the follow-up deployment.
