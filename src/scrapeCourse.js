@@ -6,6 +6,10 @@
 const { chromium } = require('playwright');
 const fs = require('fs');
 const path = require('path');
+const {
+  filterCoursesForActiveAcademicYear,
+  resolveAcademicYear,
+} = require('./academicYear');
 
 const AUTH_FILE = path.resolve(__dirname, '../auth.json');
 const COURSES_FILE = path.resolve(__dirname, '../config/courses.json');
@@ -16,16 +20,19 @@ function sanitizeFilename(name) {
   return name.replace(/[^a-zA-Z0-9_\-]/g, '_').slice(0, 60);
 }
 
-async function scrapeCourses() {
+async function scrapeCourses({ now = new Date() } = {}) {
   if (!fs.existsSync(AUTH_FILE)) {
     console.error('auth.json tidak ditemukan. Jalankan dulu: node src/login.js');
     process.exit(1);
   }
 
-  const courses = JSON.parse(fs.readFileSync(COURSES_FILE, 'utf-8'));
+  const configuredCourses = JSON.parse(fs.readFileSync(COURSES_FILE, 'utf-8'));
+  const activeAcademicYear = resolveAcademicYear(now);
+  const courses = filterCoursesForActiveAcademicYear(configuredCourses, { now });
   if (!courses.length) {
-    console.error('Tidak ada course di config/courses.json');
-    process.exit(1);
+    throw new Error(
+      `Tidak ada course tahun akademik ${activeAcademicYear.label} di config/courses.json.`
+    );
   }
 
   fs.mkdirSync(HTML_DIR, { recursive: true });

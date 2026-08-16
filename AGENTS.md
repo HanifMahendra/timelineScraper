@@ -60,6 +60,10 @@ Important deployment context:
 
 ## Extraction Notes
 
+- Course scraping is fail-closed by academic year in `Asia/Jakarta`: January
+  through June uses the previous/current year pair, and July through December
+  uses the current/next year pair. Courses without a matching year label are
+  not opened.
 - `src/extractAssignments.js` and `cloud-run-auth/src/extractAssignments.js` may intentionally mirror extraction behavior.
 - `timeline-scele-auth/src/extractAssignments.js` is the live Hugging Face copy.
 - The current extractor can treat `/mod/resource`, `/mod/url`, and `/mod/page` as assignments only when the block looks actionable and has a valid deadline.

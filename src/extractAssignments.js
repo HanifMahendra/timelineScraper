@@ -5,6 +5,10 @@
 
 const fs = require('fs');
 const path = require('path');
+const {
+  filterCoursesForActiveAcademicYear,
+  resolveAcademicYear,
+} = require('./academicYear');
 
 const HTML_DIR = path.resolve(__dirname, '../data/html');
 const COURSES_FILE = path.resolve(__dirname, '../config/courses.json');
@@ -376,13 +380,20 @@ function extractFromHtml(htmlContent, courseName, courseUrl) {
   return items;
 }
 
-function extractAssignments() {
+function extractAssignments({ now = new Date() } = {}) {
   if (!fs.existsSync(HTML_DIR)) {
     console.error('Folder data/html/ tidak ditemukan. Jalankan dulu: node src/scrapeCourse.js');
     process.exit(1);
   }
 
-  const courses = JSON.parse(fs.readFileSync(COURSES_FILE, 'utf-8'));
+  const configuredCourses = JSON.parse(fs.readFileSync(COURSES_FILE, 'utf-8'));
+  const activeAcademicYear = resolveAcademicYear(now);
+  const courses = filterCoursesForActiveAcademicYear(configuredCourses, { now });
+  if (!courses.length) {
+    throw new Error(
+      `Tidak ada course tahun akademik ${activeAcademicYear.label} di config/courses.json.`
+    );
+  }
   const courseMap = Object.fromEntries(courses.map((c) => [c.name, c.url]));
 
   const htmlFiles = fs.readdirSync(HTML_DIR).filter((f) => f.endsWith('.html'));
@@ -396,9 +407,12 @@ function extractAssignments() {
   for (const file of htmlFiles) {
     const slug = file.replace('.html', '');
     // Cocokkan slug ke nama course
-    const courseName =
-      courses.find((c) => c.name.replace(/[^a-zA-Z0-9_\-]/g, '_').slice(0, 60) === slug)?.name ||
-      slug;
+    const course = courses.find(
+      (candidate) =>
+        candidate.name.replace(/[^a-zA-Z0-9_\-]/g, '_').slice(0, 60) === slug
+    );
+    if (!course) continue;
+    const courseName = course.name;
     const courseUrl = courseMap[courseName] || '';
 
     const html = fs.readFileSync(path.join(HTML_DIR, file), 'utf-8');

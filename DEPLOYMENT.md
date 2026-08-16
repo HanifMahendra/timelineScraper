@@ -88,6 +88,19 @@ Before pushing backend/extractor changes to the Space, run:
 npm test
 ```
 
+### Academic-year course gate
+
+The live backend filters SCELE dashboard course links before opening any course
+page. Using `Asia/Jakarta`, January-June selects `(year-1)/year` and
+July-December selects `year/(year+1)`. A course title must contain that active
+academic year using a full or supported abbreviated label. Old, future, and
+unlabelled courses are skipped; if none remain, the scrape fails safely and the
+previous timeline is preserved.
+
+The root local scraper applies the same rule to `config/courses.json`, where
+each entry must declare `academicYear`. Old cached HTML is ignored during local
+extraction and is not deleted automatically.
+
 If `timeline-scele-auth/` is already clean and up to date, there is nothing to redeploy.
 
 ## Legacy Cloud Run Copy
