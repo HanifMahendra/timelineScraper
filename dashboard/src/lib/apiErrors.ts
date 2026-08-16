@@ -14,6 +14,12 @@ const KNOWN_MESSAGES: Record<string, string> = {
   RATE_LIMITED: 'Terlalu banyak permintaan. Tunggu sebentar lalu coba lagi.',
   REQUEST_TIMEOUT: 'Permintaan memerlukan waktu terlalu lama. Coba lagi nanti.',
   CORS_ORIGIN_DENIED: 'Dashboard ini tidak diizinkan mengakses layanan.',
+  SCELE_SESSION_NOT_FOUND: 'Sesi SCELE tidak ditemukan. Silakan masuk kembali.',
+  SCELE_SESSION_UNAVAILABLE: 'Sesi SCELE tidak dapat digunakan. Silakan masuk kembali.',
+  NO_COURSES_FOUND: 'Tidak ada mata kuliah yang cocok dengan tahun akademik aktif. Timeline lama tetap dipertahankan.',
+  NO_TASKS_EXTRACTED: 'Mata kuliah ditemukan, tetapi tidak ada tugas berdeadline yang dapat diambil. Timeline lama tetap dipertahankan.',
+  ALL_COURSES_FAILED: 'Semua mata kuliah gagal dibaca dari SCELE. Timeline lama tetap dipertahankan.',
+  SCRAPE_FAILED: 'Sinkronisasi SCELE gagal. Timeline lama tetap dipertahankan.',
 };
 
 export class SafeApiError extends Error {
@@ -28,11 +34,13 @@ export class SafeApiError extends Error {
     const code = typeof body.error === 'string' ? body.error.slice(0, 80) : undefined;
     const message = isNetworkError
       ? 'Tidak dapat terhubung ke layanan. Periksa koneksi internet lalu coba lagi.'
-      : status === 401
-        ? KNOWN_MESSAGES[code || ''] || 'Sesi login sudah berakhir. Silakan masuk kembali.'
+      : KNOWN_MESSAGES[code || '']
+        ? KNOWN_MESSAGES[code || '']
+        : status === 401
+          ? 'Sesi login sudah berakhir. Silakan masuk kembali.'
         : status !== undefined && status >= 500
           ? 'Layanan sedang mengalami gangguan. Coba lagi nanti.'
-          : KNOWN_MESSAGES[code || ''] || body.message || fallback;
+          : body.message || fallback;
     super(message);
     this.name = 'SafeApiError';
     this.code = code;

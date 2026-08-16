@@ -13,15 +13,14 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "SCELE Timeline",
-  description: "Dashboard timeline tugas SCELE.",
+  title: "Scheduler",
+  description: "Timeline SCELE, nilai akademik, dan rencana belajar pribadi.",
 };
 
 const themeInitScript = `
 try {
-  var storedTheme = localStorage.getItem('my-timeline-theme');
-  var theme = ['glass', 'anime', 'cyberpunk'].indexOf(storedTheme) >= 0 ? storedTheme : 'glass';
-  document.documentElement.dataset.theme = theme;
+  localStorage.setItem('my-timeline-theme', 'glass');
+  document.documentElement.dataset.theme = 'glass';
 } catch (_) {
   document.documentElement.dataset.theme = 'glass';
 }
@@ -34,7 +33,7 @@ export default function RootLayout({
 }>) {
   return (
     <html
-      lang="en"
+      lang="id"
       data-theme="glass"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
       suppressHydrationWarning

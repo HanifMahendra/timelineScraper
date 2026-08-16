@@ -1,9 +1,9 @@
 'use client';
 
-import { createContext, useCallback, useContext, useEffect, useMemo, useSyncExternalStore } from 'react';
+import { createContext, useContext, useEffect } from 'react';
 import type { ReactNode } from 'react';
 
-export type AppTheme = 'glass' | 'anime' | 'cyberpunk';
+export type AppTheme = 'glass';
 
 interface ThemeContextValue {
   theme: AppTheme;
@@ -12,47 +12,25 @@ interface ThemeContextValue {
 }
 
 const THEME_KEY = 'my-timeline-theme';
-const THEME_EVENT = 'my-timeline-theme-change';
 const ThemeContext = createContext<ThemeContextValue | null>(null);
-
-function getStoredTheme(): AppTheme {
-  if (typeof window === 'undefined') return 'glass';
-  const stored = window.localStorage.getItem(THEME_KEY);
-  if (stored === 'anime' || stored === 'cyberpunk' || stored === 'glass') return stored;
-  return 'glass';
-}
-
-function subscribeToTheme(callback: () => void) {
-  window.addEventListener('storage', callback);
-  window.addEventListener(THEME_EVENT, callback);
-  return () => {
-    window.removeEventListener('storage', callback);
-    window.removeEventListener(THEME_EVENT, callback);
-  };
-}
+const THEME_VALUE: ThemeContextValue = {
+  theme: 'glass',
+  setTheme: () => undefined,
+  toggleTheme: () => undefined,
+};
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
-  const theme = useSyncExternalStore<AppTheme>(subscribeToTheme, getStoredTheme, () => 'glass');
-
-  const setTheme = useCallback((nextTheme: AppTheme) => {
-    window.localStorage.setItem(THEME_KEY, nextTheme);
-    window.dispatchEvent(new Event(THEME_EVENT));
+  useEffect(() => {
+    document.documentElement.dataset.theme = 'glass';
+    try {
+      window.localStorage.setItem(THEME_KEY, 'glass');
+    } catch {
+      // The single active theme still works when browser storage is unavailable.
+    }
   }, []);
 
-  const value = useMemo<ThemeContextValue>(() => {
-    return {
-      theme,
-      setTheme,
-      toggleTheme: () => setTheme(theme === 'glass' ? 'anime' : theme === 'anime' ? 'cyberpunk' : 'glass'),
-    };
-  }, [setTheme, theme]);
-
-  useEffect(() => {
-    document.documentElement.dataset.theme = theme;
-  }, [theme]);
-
   return (
-    <ThemeContext.Provider value={value}>
+    <ThemeContext.Provider value={THEME_VALUE}>
       <div className="theme-root">{children}</div>
     </ThemeContext.Provider>
   );

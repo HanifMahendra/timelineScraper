@@ -25,7 +25,6 @@ import { getFirebaseAuth } from '@/lib/firebase';
 import { loginWithScele, logoutScele } from '@/lib/authApi';
 import { ScrapeApiError, triggerScrape, fetchUserTimeline } from '@/lib/timelineApi';
 import DashboardClient from '@/app/DashboardClient';
-import ThemeSwitcher from './ThemeSwitcher';
 import { isAncientOverdue, taskId } from '@/lib/timelineFilters';
 import type { Task, TimelineData } from '@/types/task';
 import GradeTracker from '@/features/grades/GradeTracker';
@@ -36,6 +35,14 @@ const EMPTY_TIMELINE: TimelineData = { today: [], upcoming: [], overdue: [] };
 const REMEMBER_KEY = 'my-timeline-remember-login';
 const COMPLETED_KEY = 'scele-completed-tasks';
 const PROFILE_KEY_PREFIX = 'my-timeline-profile';
+const PROFILE_NAME_MAX_LENGTH = 38;
+
+type SyncStatusTone = 'loading' | 'warning' | 'error';
+
+interface SyncStatus {
+  message: string;
+  tone: SyncStatusTone;
+}
 
 interface LocalProfile {
   name: string;
@@ -61,18 +68,24 @@ function profileKey(uid: string): string {
   return `${PROFILE_KEY_PREFIX}:${uid}`;
 }
 
+function limitProfileName(value: string): string {
+  return Array.from(value).slice(0, PROFILE_NAME_MAX_LENGTH).join('');
+}
+
 function getStoredProfile(uid: string, fallbackName: string): LocalProfile {
-  if (typeof window === 'undefined') return { name: fallbackName, photo: '' };
+  const safeFallbackName = limitProfileName(fallbackName);
+  if (typeof window === 'undefined') return { name: safeFallbackName, photo: '' };
   try {
     const stored = window.localStorage.getItem(profileKey(uid));
-    if (!stored) return { name: fallbackName, photo: '' };
+    if (!stored) return { name: safeFallbackName, photo: '' };
     const parsed = JSON.parse(stored) as Partial<LocalProfile>;
+    const storedName = typeof parsed.name === 'string' ? limitProfileName(parsed.name) : '';
     return {
-      name: parsed.name || fallbackName,
-      photo: parsed.photo || '',
+      name: storedName || safeFallbackName,
+      photo: typeof parsed.photo === 'string' ? parsed.photo : '',
     };
   } catch {
-    return { name: fallbackName, photo: '' };
+    return { name: safeFallbackName, photo: '' };
   }
 }
 
@@ -109,7 +122,7 @@ export default function AuthGate() {
   const [error, setError] = useState<string | null>(null);
   const [timeline, setTimeline] = useState<TimelineData>(EMPTY_TIMELINE);
   const [scraping, setScraping] = useState(false);
-  const [scrapeStatus, setScrapeStatus] = useState<string | null>(null);
+  const [scrapeStatus, setScrapeStatus] = useState<SyncStatus | null>(null);
   const [selectedCourse, setSelectedCourse] = useState('all');
   const [completedIds, setCompletedIds] = useState<Set<string>>(getStoredCompletedIds);
   const [profile, setProfile] = useState<LocalProfile>({ name: '', photo: '' });
@@ -157,32 +170,44 @@ export default function AuthGate() {
 
   async function handleScrape(currentUser: User) {
     setScraping(true);
-    setScrapeStatus('Sedang mengambil data SCELE...');
+    setScrapeStatus({ message: 'Sedang mengambil data SCELE...', tone: 'loading' });
     try {
       const idToken = await currentUser.getIdToken();
       const result = await triggerScrape(idToken);
       if (result.timelineWritten) {
-        setScrapeStatus('Memuat data...');
+        setScrapeStatus({ message: 'Memuat data...', tone: 'loading' });
         const fresh = await fetchUserTimeline(currentUser.uid);
         if (fresh) setTimeline(fresh);
         setScrapeStatus(null);
       } else if (result.status === 'partial') {
-        setScrapeStatus(
-          `Sinkronisasi hanya berhasil untuk ${result.successfulCourseCount} mata kuliah; ` +
-          `${result.failedCourseCount} gagal. Timeline lama tetap dipertahankan.`
-        );
+        setScrapeStatus({
+          message:
+            `Sinkronisasi hanya berhasil untuk ${result.successfulCourseCount} mata kuliah; ` +
+            `${result.failedCourseCount} gagal. Timeline lama tetap dipertahankan.`,
+          tone: 'warning',
+        });
       } else {
-        setScrapeStatus(result.message || 'Sinkronisasi gagal. Timeline lama tetap dipertahankan.');
+        setScrapeStatus({
+          message: result.message || 'Sinkronisasi gagal. Timeline lama tetap dipertahankan.',
+          tone: 'error',
+        });
       }
     } catch (err) {
       if (err instanceof ScrapeApiError && err.code === 'SCRAPE_COOLDOWN') {
-        setScrapeStatus(
-          `Refresh terlalu cepat. Coba lagi dalam ${err.retryAfterSeconds ?? 60} detik.`
-        );
+        setScrapeStatus({
+          message: `Refresh terlalu cepat. Coba lagi dalam ${err.retryAfterSeconds ?? 60} detik.`,
+          tone: 'warning',
+        });
       } else if (err instanceof ScrapeApiError && err.code === 'SCRAPE_ALREADY_RUNNING') {
-        setScrapeStatus('Sinkronisasi untuk akun ini masih berjalan. Tunggu hingga selesai.');
+        setScrapeStatus({
+          message: 'Sinkronisasi untuk akun ini masih berjalan. Tunggu hingga selesai.',
+          tone: 'loading',
+        });
       } else {
-        setScrapeStatus(displayApiError(err, 'Scrape gagal.'));
+        setScrapeStatus({
+          message: displayApiError(err, 'Scrape gagal.'),
+          tone: 'error',
+        });
       }
     } finally {
       setScraping(false);
@@ -235,9 +260,13 @@ export default function AuthGate() {
 
   function saveProfile(nextProfile: LocalProfile) {
     if (!user) return;
-    setProfile(nextProfile);
+    const safeProfile = {
+      ...nextProfile,
+      name: limitProfileName(nextProfile.name),
+    };
+    setProfile(safeProfile);
     try {
-      window.localStorage.setItem(profileKey(user.uid), JSON.stringify(nextProfile));
+      window.localStorage.setItem(profileKey(user.uid), JSON.stringify(safeProfile));
     } catch {
       // ignore local storage write failures
     }
@@ -269,69 +298,90 @@ export default function AuthGate() {
     return (
       <div className="app-screen app-screen-login">
         <div className="app-bg app-bg-login" />
-        <div className="login-theme-control">
-          <ThemeSwitcher />
-        </div>
 
         <div className="login-layout">
-          <section className="login-brand" aria-label="My Timeline">
-            <p className="brand-kicker">Automated SCELE Deadline Tracker</p>
-            <h1 className="brand-title">My Timeline</h1>
-            <p className="brand-subtitle">Masuk dengan akun SCELE kamu</p>
-          </section>
-
-          <form onSubmit={handleLogin} className="login-card">
-            <div className="login-card-line" />
-            <div className="mb-5">
-              <h2 className="panel-title">My Timeline</h2>
-              <p className="panel-subtitle">Automated SCELE Deadline Tracker</p>
+          <section className="login-window" aria-label="Scheduler">
+            <div className="login-window-bar" aria-hidden="true">
+              <div className="window-controls"><i /><i /><i /></div>
+              <span>Scheduler</span>
+              <span />
             </div>
 
-            <label className="form-field">
-              <span>Username</span>
-              <input
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-                autoComplete="username"
-                placeholder="Username SCELE"
-                required
-              />
-            </label>
+            <div className="login-window-body">
+              <section className="login-brand">
+                <div className="login-brand-mark">
+                  <CalendarDays size={26} aria-hidden="true" />
+                </div>
+                <p className="login-brand-name">Scheduler</p>
+                <h1>Semester yang lebih teratur.</h1>
+                <p className="brand-subtitle">
+                  Deadline SCELE, catatan nilai, dan rencana belajar dalam satu ruang akademik pribadi.
+                </p>
 
-            <label className="form-field">
-              <span>Password</span>
-              <input
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                type="password"
-                autoComplete="current-password"
-                placeholder="Password SCELE"
-                required
-              />
-            </label>
+                <div className="login-feature-list" aria-label="Fitur Scheduler">
+                  <div><ListTodo size={16} aria-hidden="true" /><span>Timeline SCELE</span></div>
+                  <div><BookOpenCheck size={16} aria-hidden="true" /><span>Nilai manual</span></div>
+                  <div><BrainCircuit size={16} aria-hidden="true" /><span>Rencana belajar</span></div>
+                </div>
+              </section>
 
-            <label className="remember-row">
-              <input
-                type="checkbox"
-                checked={remember}
-                onChange={(e) => setRemember(e.target.checked)}
-              />
-              <span>Ingat saya</span>
-            </label>
+              <form onSubmit={handleLogin} className="login-card">
+                <div className="login-card-heading">
+                  <span>Akun mahasiswa</span>
+                  <h2>Masuk ke Scheduler</h2>
+                  <p>Gunakan akun SCELE kamu untuk melanjutkan.</p>
+                </div>
 
-            {error && <p className="form-error">{error}</p>}
+                <label className="form-field">
+                  <span>Username</span>
+                  <input
+                    value={username}
+                    onChange={(e) => setUsername(e.target.value)}
+                    autoComplete="username"
+                    placeholder="Username SCELE"
+                    required
+                  />
+                </label>
 
-            <button type="submit" disabled={submitting} className="primary-action">
-              {submitting ? 'Masuk...' : 'Masuk'}
-            </button>
-          </form>
+                <label className="form-field">
+                  <span>Password</span>
+                  <input
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    type="password"
+                    autoComplete="current-password"
+                    placeholder="Password SCELE"
+                    required
+                  />
+                </label>
+
+                <div className="login-form-footer">
+                  <label className="remember-row">
+                    <input
+                      type="checkbox"
+                      checked={remember}
+                      onChange={(e) => setRemember(e.target.checked)}
+                    />
+                    <span>Ingat saya</span>
+                  </label>
+                  <span className="login-privacy-note">Password tidak disimpan</span>
+                </div>
+
+                {error && <p className="form-error">{error}</p>}
+
+                <button type="submit" disabled={submitting} className="primary-action">
+                  {submitting ? 'Menghubungkan...' : 'Masuk'}
+                </button>
+              </form>
+            </div>
+          </section>
         </div>
       </div>
     );
   }
 
-  const fallbackName = user.displayName || user.email || user.uid;
-  const displayName = profile.name || fallbackName;
+  const fallbackName = limitProfileName(user.displayName || user.email || user.uid);
+  const displayName = limitProfileName(profile.name || fallbackName);
   const allTasks = getAllTasks(timeline);
   const taskCount = allTasks.length;
   const courses = [...new Set(allTasks.map((task) => task.course))].sort((a, b) => a.localeCompare(b));
@@ -368,10 +418,31 @@ export default function AuthGate() {
               <CalendarDays size={20} aria-hidden="true" />
             </div>
             <div>
-              <p className="sidebar-title">My Timeline</p>
-              <p className="sidebar-subtitle">SCELE Tracker</p>
+              <p className="sidebar-title">Scheduler</p>
+              <p className="sidebar-subtitle">Workspace akademik</p>
             </div>
           </div>
+
+          <button
+            type="button"
+            className="sidebar-user"
+            onClick={() => setSettingsOpen(true)}
+            aria-label={`Buka pengaturan profil ${displayName}`}
+          >
+            <div className="user-avatar">
+              {profile.photo ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={profile.photo} alt="" />
+              ) : (
+                displayName.slice(0, 1).toUpperCase()
+              )}
+            </div>
+            <div className="min-w-0">
+              <p>{displayName}</p>
+              <span>Mahasiswa UI</span>
+            </div>
+            <ChevronRight size={16} aria-hidden="true" />
+          </button>
 
           <nav className="sidebar-navigation" aria-label="Area dashboard">
             <button
@@ -400,7 +471,7 @@ export default function AuthGate() {
             </button>
           </nav>
 
-          <div className="sync-panel">
+          <div className={`sync-panel sync-status-${scrapeStatus?.tone ?? 'idle'}`}>
             <div className="sync-panel-top">
               <span>Sinkronisasi</span>
               <button onClick={() => handleScrape(user)} disabled={scraping}>
@@ -409,8 +480,8 @@ export default function AuthGate() {
               </button>
             </div>
             <p>
-              <span className="sync-dot" />
-              {scrapeStatus || `Snapshot memuat ${taskCount} item SCELE`}
+              <span className={`sync-dot sync-dot-${scrapeStatus?.tone ?? 'idle'}`} />
+              {scrapeStatus?.message || `Snapshot memuat ${taskCount} item SCELE`}
             </p>
           </div>
 
@@ -452,27 +523,11 @@ export default function AuthGate() {
             ))}
           </div>}
 
-          <button type="button" className="sidebar-user" onClick={() => setSettingsOpen(true)}>
-            <div className="user-avatar">
-              {profile.photo ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img src={profile.photo} alt="" />
-              ) : (
-                displayName.slice(0, 1).toUpperCase()
-              )}
-            </div>
-            <div className="min-w-0">
-              <p>{displayName}</p>
-              <span>Mahasiswa UI</span>
-            </div>
-            <ChevronRight size={16} aria-hidden="true" />
-          </button>
         </aside>
 
         <section className="dashboard-main">
           <header className="dashboard-header">
             <div className="min-w-0">
-              <p className="brand-kicker">Automated SCELE Deadline Tracker</p>
               <h1 className="dashboard-title">
                 {activeArea === 'timeline' ? 'Timeline Tugas' : activeArea === 'grades' ? 'Nilai Akademik' : 'Rencana Belajar'}
               </h1>
@@ -486,7 +541,6 @@ export default function AuthGate() {
             </div>
 
             <div className="dashboard-actions">
-              <ThemeSwitcher compact />
               <button onClick={() => handleScrape(user)} disabled={scraping} className="ghost-action">
                 <RefreshCw size={15} className={scraping ? 'animate-spin' : ''} />
                 {scraping ? 'Memuat' : 'Refresh'}
@@ -525,7 +579,15 @@ export default function AuthGate() {
             </button>
           </nav>
 
-          {scrapeStatus && <div className="status-banner">{scrapeStatus}</div>}
+          {scrapeStatus && (
+            <div
+              className={`status-banner status-banner-${scrapeStatus.tone}`}
+              role={scrapeStatus.tone === 'error' ? 'alert' : 'status'}
+              aria-live="polite"
+            >
+              {scrapeStatus.message}
+            </div>
+          )}
 
           {activeArea === 'timeline' ? (
             <DashboardClient
@@ -576,7 +638,12 @@ export default function AuthGate() {
                 value={profile.name}
                 onChange={(event) => saveProfile({ ...profile, name: event.target.value })}
                 placeholder={fallbackName}
+                maxLength={PROFILE_NAME_MAX_LENGTH}
+                aria-describedby="profile-name-limit"
               />
+              <small id="profile-name-limit" className="form-hint">
+                {Array.from(profile.name).length}/{PROFILE_NAME_MAX_LENGTH} karakter
+              </small>
             </label>
 
             <label className="profile-upload">

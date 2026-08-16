@@ -60,11 +60,10 @@ Theme state is stored in local storage with:
 my-timeline-theme
 ```
 
-Available themes:
-
-- `glass`
-- `anime`
-- `cyberpunk`
+The dashboard currently exposes a single `glass` theme with a calm pastel,
+macOS-inspired visual system. The previous `anime` and `cyberpunk` assets and
+CSS remain in the repository for possible future reactivation, but stored
+preferences are normalized to `glass` and no theme selector is rendered.
 
 Theme background assets live in:
 
