@@ -44,7 +44,12 @@ Important deployment context:
 - Theme assets live in `dashboard/public/backgrounds/`.
 - Theme preference key: `my-timeline-theme`.
 - Current dashboard themes are `glass`, `anime`, and `cyberpunk`.
-- Completed task local key: `scele-completed-tasks`.
+- Completed tasks are stored on the backend (`/task-state/completed`); the
+  browser keeps a per-user cache in `scele-completed-tasks:<uid>`. The old
+  shared `scele-completed-tasks` key is migrated once on sign-in, then removed.
+- Deadline status (today/upcoming/overdue) is recomputed client-side from
+  `deadlineISO` via `dashboard/src/lib/timelineStatus.ts`; do not rely on the
+  stored `isOverdue`/`isDueToday` flags for display.
 - Remember-login preference key: `my-timeline-remember-login`.
 - Dashboard profile display settings are UI-only and stored per Firebase/SCELE user as `my-timeline-profile:<uid>`.
 - For dashboard backgrounds or other public assets, update files in `dashboard/public/`, rebuild, and deploy from the repo root. If deployed assets appear stale, hard refresh and/or bump the cache-busting query string in `dashboard/src/app/globals.css`.
@@ -67,6 +72,17 @@ Important deployment context:
 - `src/extractAssignments.js` and `cloud-run-auth/src/extractAssignments.js` may intentionally mirror extraction behavior.
 - `timeline-scele-auth/src/extractAssignments.js` is the live Hugging Face copy.
 - The current extractor can treat `/mod/resource`, `/mod/url`, and `/mod/page` as assignments only when the block looks actionable and has a valid deadline.
+- Activity types are `assignment`, `quiz`, `lab`, and `forum`. Discussion
+  forums are kept (some courses grade them); announcement/news forums are not.
+  Moodle `modtype_*` classes decide non-task modules (label, folder, etc.), and
+  activities restricted to another group ("You belong to Kelas A") are skipped.
+- Semester filter: after the academic year, a `Gasal`/`Ganjil`/`Genap` label
+  must match the active Jakarta month (Jul-Dec Gasal, Feb-Jun Genap, January
+  both).
+- Course discovery uses Moodle's enrolled-courses web service because the
+  dashboard navigation truncates long course names and hides the year label.
+- `src/extractAssignments.js` is a CommonJS copy of the live extractor core;
+  `tests/extractAssignments.test.mjs` asserts both produce identical output.
 - Root `npm test` runs the local extraction regression plus the deterministic
   production-backend foundation test suite.
 

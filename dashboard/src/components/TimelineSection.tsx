@@ -6,7 +6,7 @@ import type { Task } from '@/types/task';
 
 interface Props {
   title: string;
-  tone?: 'today' | 'upcoming' | 'overdue' | 'completed' | 'search';
+  tone?: 'today' | 'upcoming' | 'nodeadline' | 'overdue' | 'completed' | 'search';
   tasks: Task[];
   emptyMessage: string;
   completedIds?: Set<string>;

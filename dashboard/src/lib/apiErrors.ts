@@ -16,6 +16,7 @@ const KNOWN_MESSAGES: Record<string, string> = {
   CORS_ORIGIN_DENIED: 'Dashboard ini tidak diizinkan mengakses layanan.',
   SCELE_SESSION_NOT_FOUND: 'Sesi SCELE tidak ditemukan. Silakan masuk kembali.',
   SCELE_SESSION_UNAVAILABLE: 'Sesi SCELE tidak dapat digunakan. Silakan masuk kembali.',
+  SCELE_SESSION_EXPIRED: 'Sesi SCELE sudah berakhir. Masuk ulang untuk sinkronisasi lagi; data lama tetap tersimpan.',
   NO_COURSES_FOUND: 'Tidak ada mata kuliah yang sedang aktif dengan tahun ini',
   NO_TASKS_EXTRACTED: 'Mata kuliah ditemukan, tetapi tidak ada tugas berdeadline yang dapat diambil. Timeline lama tetap dipertahankan.',
   ALL_COURSES_FAILED: 'Semua mata kuliah gagal dibaca dari SCELE. Timeline lama tetap dipertahankan.',

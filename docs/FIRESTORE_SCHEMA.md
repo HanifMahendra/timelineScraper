@@ -526,6 +526,20 @@ days, minimum/preferred/maximum session duration, optional non-overlapping time
 blocks, weekend choice, planning horizon, and difficulty preference. Defaults
 are Asia/Jakarta, 60 minutes/day, 30-minute sessions, and 14 days.
 
+## Completed-task marks
+
+```text
+users/{uid}/taskState/completed
+```
+
+`{ ids: string[], updatedAt }`, where each id is the dashboard task key
+(activity URL, else title; at most 512 characters). The list holds at most
+2000 ids; the oldest marks are dropped first. It is written only by the
+backend (`GET`/`PATCH /task-state/completed`) inside a transaction; clients
+have no Rules access, which the default deny already enforces. The dashboard
+keeps a per-uid local cache and migrates the old shared
+`scele-completed-tasks` local key into this document on first sign-in.
+
 ## Study plans, drafts, and sessions
 
 ```text

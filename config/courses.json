@@ -1,27 +1,26 @@
 [
   {
-    "name": "Pemrograman Lanjut",
-    "academicYear": "2025/2026",
-    "url": "https://scele.cs.ui.ac.id/course/view.php?id=4144"
+    "name": "Aljabar Linear",
+    "academicYear": "2026/2027",
+    "semester": "Gasal",
+    "url": "https://scele.cs.ui.ac.id/course/view.php?id=4226"
   },
   {
     "name": "Basis Data",
-    "academicYear": "2025/2026",
-    "url": "https://scele.cs.ui.ac.id/course/view.php?id=4129"
+    "academicYear": "2026/2027",
+    "semester": "Gasal",
+    "url": "https://scele.cs.ui.ac.id/course/view.php?id=4246"
   },
   {
-    "name": "Sistem Interaksi",
-    "academicYear": "2025/2026",
-    "url": "https://scele.cs.ui.ac.id/course/view.php?id=4137"
+    "name": "Desain & Analisis Algoritma",
+    "academicYear": "2026/2027",
+    "semester": "Gasal",
+    "url": "https://scele.cs.ui.ac.id/course/view.php?id=4266"
   },
   {
-    "name": "Statistika dan Probabilitas",
-    "academicYear": "2025/2026",
-    "url": "https://scele.cs.ui.ac.id/course/view.php?id=4148"
-  },
-  {
-    "name": "Struktur Data dan Algoritma",
-    "academicYear": "2025/2026",
-    "url": "https://scele.cs.ui.ac.id/course/view.php?id=4138"
+    "name": "Rekayasa Perangkat Lunak",
+    "academicYear": "2026/2027",
+    "semester": "Gasal",
+    "url": "https://scele.cs.ui.ac.id/course/view.php?id=4268"
   }
 ]

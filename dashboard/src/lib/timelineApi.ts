@@ -73,5 +73,15 @@ export async function fetchUserTimeline(uid: string): Promise<TimelineData | nul
     today: data.today ?? [],
     upcoming: data.upcoming ?? [],
     overdue: data.overdue ?? [],
+    syncedAt: toIsoString(data.scrapedAt) ?? toIsoString(data.updatedAt),
   };
+}
+
+function toIsoString(value: unknown): string | null {
+  if (value && typeof value === 'object' && 'toDate' in value && typeof value.toDate === 'function') {
+    const date = value.toDate() as Date;
+    return Number.isFinite(date.getTime()) ? date.toISOString() : null;
+  }
+  if (typeof value === 'string' && Number.isFinite(new Date(value).getTime())) return value;
+  return null;
 }

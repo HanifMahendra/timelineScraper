@@ -71,3 +71,18 @@ test('course filtering is fail-closed for old, future, and unlabelled courses', 
 test('invalid reference dates are rejected', () => {
   assert.throws(() => resolveAcademicYear(new Date('invalid')), TypeError);
 });
+
+test('semester label keeps only the active Gasal/Genap courses of the academic year', () => {
+  const courses = [
+    { name: '[Reg] Desain & Analisis Algoritma (A,B,C) Gasal 2026/2027' },
+    { name: '[Reg] Pemrograman Berbasis Platform Ganjil 2026/2027' },
+    { name: '[Reg] Teori Bahasa & Automata (A,B,C) Genap 2026/2027' },
+    { name: '[Reg] Kapita Selekta 2026/2027' },
+    { name: '[Reg] Basis Data (A,B,C,D,E) Genap 2025/2026' },
+  ];
+  const names = (now) => filterCoursesForActiveAcademicYear(courses, { now: new Date(now) }).map((c) => c.name);
+
+  assert.deepEqual(names('2026-09-26T10:00:00Z'), [courses[0].name, courses[1].name, courses[3].name]);
+  assert.deepEqual(names('2027-03-01T10:00:00Z'), [courses[2].name, courses[3].name]);
+  assert.deepEqual(names('2027-01-10T10:00:00Z'), [courses[0].name, courses[1].name, courses[2].name, courses[3].name]);
+});

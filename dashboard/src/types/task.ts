@@ -1,4 +1,4 @@
-export type TaskType = 'assignment' | 'quiz' | 'lab' | 'other';
+export type TaskType = 'assignment' | 'quiz' | 'lab' | 'forum' | 'other';
 
 export type UrgencyStatus = 'overdue' | 'today' | 'soon' | 'normal';
 
@@ -30,6 +30,8 @@ export interface TimelineData {
   today: Task[];
   upcoming: Task[];
   overdue: Task[];
+  /** When SCELE was last scraped successfully (ISO), if known. */
+  syncedAt?: string | null;
 }
 
 export type FilterType = 'all' | TaskType | 'overdue' | 'today';
