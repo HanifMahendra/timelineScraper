@@ -15,6 +15,7 @@ const TYPE_CONFIG = {
   assignment: { label: 'Tugas', tone: 'assignment' },
   quiz:       { label: 'Quiz',  tone: 'quiz' },
   lab:        { label: 'Lab',   tone: 'lab' },
+  forum:      { label: 'Forum', tone: 'forum' },
   other:      { label: 'Lain',  tone: 'other' },
 };
 
@@ -48,7 +49,7 @@ const BULAN = [
 ];
 
 function formatDeadlineID(task: Task): string {
-  if (!task.deadlineISO) return task.deadlineText ?? '–';
+  if (!task.deadlineISO) return task.deadlineText ?? 'Tidak ada deadline di SCELE';
 
   const now = new Date();
   const wibOffset = 7 * 60 * 60 * 1000;
