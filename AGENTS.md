@@ -14,7 +14,7 @@ grade tracker.
 
 ## What This App Does
 
-My Timeline is an automated SCELE deadline tracker. The scraper logs in to SCELE, extracts assignments/quizzes/labs/deadlines, stores a per-user timeline in Firebase/Firestore, and the dashboard displays those SCELE-derived deadlines. The grade tracker is a separate per-user manual-input domain and must not replace or mutate the SCELE timeline.
+My Timeline is an automated SCELE deadline tracker. The scraper logs in to SCELE, extracts assignments/quizzes/labs/deadlines, stores a per-user timeline in Firebase/Firestore, and the dashboard displays those SCELE-derived deadlines. The grade tracker is a separate per-user domain and must not replace or mutate the SCELE timeline. Scraping mirrors released SCELE grades into one gradebook per active course (`timeline-scele-auth/src/grades/sceleGradeSync.js`), but categories, weights, and letter bounds are always entered by the user from the BRP; never infer weights automatically. Letter grades (A..C spaced evenly between the user's A and C minimums, UI points A 4.0 .. E 0) and the IP/IPK planner live in `gradeLetters.js` and `semesterPlanner.js`.
 
 Do not turn the dashboard into a manual class schedule app or a generic productivity dashboard. The source of truth is SCELE data.
 

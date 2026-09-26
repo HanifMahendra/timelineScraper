@@ -204,6 +204,53 @@ EMPTY_CATEGORY
 
 Warnings explain incomplete or unusual data. They are not silently corrected.
 
+## Letter grades
+
+Implemented in `timeline-scele-auth/src/grades/gradeLetters.js`. The user
+enters the minimum for **A** and for **C** (in the gradebook's scale);
+A-, B+, B, B-, and C+ are spaced evenly between them:
+
+```text
+step = (aMin - cMin) / 6
+A ≥ aMin, A- ≥ aMin - step, …, C ≥ cMin; D ≥ dMin (default 40), else E
+defaults: hundred → A 85, C 55 (step 5); four → A 3.33, C 2.0
+points:   A 4.0, A- 3.7, B+ 3.3, B 3.0, B- 2.7, C+ 2.3, C 2.0, D 1.0, E 0
+```
+
+Per letter, the target uses the same rule as the numeric target:
+`required average = (threshold − current) / remaining known weight × 100`,
+with statuses `already_achieved`, `reachable`, `requires_perfect_score`,
+`impossible`, or `indeterminate` when any weight is unknown. The summary
+also reports the guaranteed letter (current score with zero on the rest) and
+the best possible letter (100 on all remaining known weight; unknown when
+weights are incomplete).
+
+### Decimal (0.0-4.0) courses
+
+`finalScale: "four"` forces points mode: each component/category score is
+points out of 4 and normalizes to percent (`x / 4 × 100`). Bounds are entered
+in 0-4 units and compared as `x × 25`; the final score and required averages
+are reported back in 0-4.
+
+## Semester IP/IPK planner
+
+`semesterPlanner.js`. Courses count when they are active, have `credits`,
+and either have no semester label or match the current Jakarta semester
+(Jul-Jan Gasal, Feb-Jun Genap). Needed IP:
+
+```text
+target IP given        → that value
+target IPK given       → (IPK_target × (SKS_before + SKS_now) − IPK_before × SKS_before) / SKS_now
+```
+
+Each course's options run from its guaranteed to its best possible letter,
+with the required average as effort (courses with incomplete weights use the
+letter threshold as an estimate and are flagged). A dynamic program over the
+SKS-weighted grade-point total picks the combination that reaches the needed
+IP with the lowest single hardest requirement, then the lowest SKS-weighted
+total effort. Results report `impossible` when even the best letters fall
+short, and `already_guaranteed` when current scores suffice.
+
 ## Known limitations
 
 - Mixed fixed/equal/unknown weights inside one weighted category remain
@@ -214,8 +261,8 @@ Warnings explain incomplete or unusual data. They are not silently corrected.
   drops, or archives them.
 - Category archive cascades component archive in multiple bounded batches and
   cannot be atomic across more than one Firestore batch.
-- No letter-grade mapping, pass/fail scale, or institution-specific rounding
-  policy is implemented.
+- Letter grades use the evenly spaced A..C rule below; institution-specific
+  rounding (e.g. 84.5 → A) is not applied.
 - Import does not infer unknown weight, auto-normalize total weight to 100, or
   treat blank scores as zero. Formula-derived cached values remain reviewable
   input with a warning before commit.

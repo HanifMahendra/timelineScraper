@@ -26,6 +26,7 @@ import {
   createScenario,
   getGradebook,
   listGradebooks,
+  restoreSceleScore,
   updateCategory,
   updateComponent,
   updateGradebook,
@@ -38,6 +39,8 @@ import {
   ScenarioForm,
 } from './GradeForms';
 import GradeSummary, { formatGradeNumber } from './GradeSummary';
+import LetterTargets from './LetterTargets';
+import AcademicPlanner from './AcademicPlanner';
 import { fetchGradeActivityOptions } from './activityOptions';
 import GradeImportWizard from './imports/GradeImportWizard';
 import type {
@@ -339,6 +342,16 @@ export default function GradeTracker({
     });
   }
 
+  async function applySceleScore(component: GradeComponent) {
+    if (!detail) return;
+    await runMutation(async () => {
+      const token = await user.getIdToken();
+      await restoreSceleScore(token, detail.gradebook.id, component.id);
+      await refreshAfterMutation(detail.gradebook.id);
+      setScenarioProjection(null);
+    });
+  }
+
   async function removeScenario(scenario: GradeScenario) {
     if (!detail) return;
     if (!window.confirm(`Arsipkan skenario ${scenario.name}?`)) return;
@@ -382,10 +395,12 @@ export default function GradeTracker({
       <div className="grade-tracker">
         <section className="grade-toolbar">
           <div>
-            <p className="brand-kicker">Manual Grade Tracker</p>
+            <p className="brand-kicker">Nilai &amp; IP</p>
             <h2>Gradebook mata kuliah</h2>
             <p>
-              Input nilai dan bobot secara eksplisit. Pending tidak dihitung sebagai nol.
+              Gradebook tiap mata kuliah semester ini dibuat otomatis saat sinkronisasi, dan nilai
+              yang sudah rilis di SCELE ikut masuk. Kamu cukup membuat kategori (Tugas, Kuis, UTS,
+              UAS, …) beserta bobotnya dari BRP, lalu memasukkan komponen ke kategorinya.
             </p>
           </div>
           <button
@@ -399,6 +414,8 @@ export default function GradeTracker({
         </section>
 
         {error && <div className="grade-error">{error}</div>}
+
+        <AcademicPlanner user={user} refreshKey={gradebooks} />
 
         {showCreateGradebook && (
           <section className="grade-panel">
@@ -422,8 +439,8 @@ export default function GradeTracker({
             <BookOpenCheck size={28} aria-hidden="true" />
             <h3>Belum ada gradebook</h3>
             <p>
-              Buat satu gradebook per mata kuliah dan semester. Gradebook tidak harus
-              terhubung ke course SCELE.
+              Jalankan sinkronisasi SCELE agar gradebook mata kuliah semester ini dibuat otomatis,
+              atau buat manual untuk mata kuliah di luar SCELE.
             </p>
           </section>
         ) : (
@@ -458,6 +475,15 @@ export default function GradeTracker({
                     </strong>
                   </div>
                 </div>
+                {gradebook.summary.letters && (
+                  <div className="gradebook-card-letters">
+                    <span>
+                      Huruf: {gradebook.summary.letters.currentLetter ??
+                        `${gradebook.summary.letters.guaranteedLetter ?? '?'} – ${gradebook.summary.letters.bestPossibleLetter ?? '?'}`}
+                    </span>
+                    <span>{gradebook.credits ? `${gradebook.credits} SKS` : 'SKS belum diisi'}</span>
+                  </div>
+                )}
                 <div className="gradebook-card-footer">
                   <span>{targetStatusLabel(gradebook.summary.targetStatus)}</span>
                   {gradebook.summary.warningCount > 0 && (
@@ -497,7 +523,10 @@ export default function GradeTracker({
           </p>
           <h2>{detail.gradebook.courseName}</h2>
           <p>
-            Mode {detail.gradebook.gradingScale === 'points' ? 'poin' : 'persentase'}
+            {detail.gradebook.finalScale === 'four'
+              ? 'Skala desimal 0.0–4.0'
+              : `Mode ${detail.gradebook.gradingScale === 'points' ? 'poin' : 'persentase'}`}
+            {detail.gradebook.credits ? ` · ${detail.gradebook.credits} SKS` : ' · SKS belum diisi'}
             {' · '}
             {detail.gradebook.capFinalScoreAt100
               ? 'nilai akhir di-cap 100'
@@ -564,6 +593,8 @@ export default function GradeTracker({
           />
         </section>
       )}
+
+      {detail.result.letters && <LetterTargets letters={detail.result.letters} />}
 
       <GradeSummary
         result={detail.result}
@@ -684,9 +715,16 @@ export default function GradeTracker({
           </div>
         )}
 
+        {detail.components.some((component) => !component.categoryId) && detail.categories.length > 0 && (
+          <p className="grade-form-note">
+            Komponen &quot;Tanpa kategori&quot; belum ikut dihitung. Klik Edit lalu pilih kategorinya.
+          </p>
+        )}
+
         {detail.components.length === 0 ? (
           <p className="grade-empty-copy">
-            Belum ada komponen. Tambahkan tugas, kuis, ujian, proyek, atau bonus.
+            Belum ada komponen. Nilai dari SCELE muncul di sini setelah sinkronisasi; kamu juga bisa
+            menambah tugas, kuis, ujian, proyek, atau bonus secara manual.
           </p>
         ) : (
           <div className="grade-component-list">
@@ -707,6 +745,11 @@ export default function GradeTracker({
                       </span>
                       {component.isBonus && <span>Bonus</span>}
                       {component.isDropped && <span>Dropped</span>}
+                      {component.sceleSource && (
+                        <span className={`grade-source grade-source-${component.scoreOrigin ?? 'scele'}`}>
+                          {component.scoreOrigin === 'manual' ? 'Diubah manual' : 'Dari SCELE'}
+                        </span>
+                      )}
                     </div>
                     <p>
                       {categoryById.get(component.categoryId || '')?.name ||
@@ -732,6 +775,18 @@ export default function GradeTracker({
                     )}
                   </div>
                   <div className="grade-row-actions">
+                    {component.sceleSource && component.scoreOrigin === 'manual' && (
+                      <button
+                        type="button"
+                        className="ghost-action"
+                        onClick={() => void applySceleScore(component)}
+                        disabled={saving}
+                        title={`Nilai SCELE: ${component.sceleSource.grade ?? 'belum rilis'}`}
+                      >
+                        <RefreshCw size={13} aria-hidden="true" />
+                        Pakai nilai SCELE
+                      </button>
+                    )}
                     <button
                       type="button"
                       className="ghost-action"

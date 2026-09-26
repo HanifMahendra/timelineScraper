@@ -1,4 +1,6 @@
 import type {
+  AcademicProfile,
+  SemesterPlan,
   CategoryInput,
   ComponentInput,
   Gradebook,
@@ -146,6 +148,26 @@ export async function updateComponent(
     `/gradebooks/${encodeURIComponent(gradebookId)}/components/${encodeURIComponent(componentId)}`,
     { method: 'PATCH', body: JSON.stringify(input) }
   );
+}
+
+/** Drops a manual override and returns the component to its SCELE grade. */
+export async function restoreSceleScore(idToken: string, gradebookId: string, componentId: string) {
+  return gradeRequest<{ component: GradeComponent }>(
+    idToken,
+    `/gradebooks/${encodeURIComponent(gradebookId)}/components/${encodeURIComponent(componentId)}`,
+    { method: 'PATCH', body: JSON.stringify({ useSceleScore: true }) }
+  );
+}
+
+export async function getAcademicPlan(idToken: string) {
+  return gradeRequest<{ profile: AcademicProfile; plan: SemesterPlan }>(idToken, '/academic-plan');
+}
+
+export async function saveAcademicProfile(idToken: string, profile: AcademicProfile) {
+  return gradeRequest<{ profile: AcademicProfile; plan: SemesterPlan }>(idToken, '/academic-profile', {
+    method: 'PUT',
+    body: JSON.stringify(profile),
+  });
 }
 
 export async function archiveComponent(

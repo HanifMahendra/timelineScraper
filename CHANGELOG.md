@@ -7,6 +7,21 @@ implemented repository state, not deployment status.
 
 ### Added
 
+- Released SCELE grades: each scrape reads Moodle's user grade report for the
+  active courses and mirrors it into one gradebook per course (created
+  automatically). Another class group's inaccessible items are skipped, a
+  grade with an unreadable range is skipped rather than assumed out of 100,
+  and scores the user edits by hand are never overwritten ("Pakai nilai
+  SCELE" restores them). Grade sync is best-effort and cannot fail a scrape.
+- Letter grades A..E with user-entered A and C minimums (letters between are
+  spaced evenly); per-letter "average needed on the remaining weight",
+  guaranteed and best-possible letter.
+- Decimal courses: gradebook `finalScale: "four"` scores categories and the
+  final grade on 0.0-4.0.
+- Gradebook SKS and a semester IP/IPK planner (`GET /academic-plan`,
+  `PUT /academic-profile`) that finds the least demanding letter combination
+  to reach a target IP or IPK.
+
 - Completed-task marks are stored per account on the backend
   (`/task-state/completed`, `users/{uid}/taskState/completed`) and follow the
   user across devices; old browser-only marks are migrated on sign-in.
