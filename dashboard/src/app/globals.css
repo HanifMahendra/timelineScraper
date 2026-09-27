@@ -7,7 +7,7 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-sans);
+  --font-sans: var(--font-geist-sans), -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   --font-mono: var(--font-geist-mono);
   --font-heading: var(--font-sans);
   --color-sidebar-ring: var(--sidebar-ring);
@@ -4945,5 +4945,585 @@
   .status-banner-error,
   .sync-status-error {
     background: var(--error-background);
+  }
+}
+
+/* Task card, login progress, and profile photo refinements. */
+@layer components {
+  .theme-root [data-slot="card"].task-card {
+    border-radius: 14px;
+  }
+
+  .task-card::before {
+    content: none;
+  }
+
+  .task-card-content {
+    min-height: 0;
+    gap: 0;
+    padding: 14px 16px 12px;
+  }
+
+  .task-card-meta {
+    display: flex;
+    min-width: 0;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .task-card-meta .task-course {
+    min-width: 0;
+    flex: 1;
+    margin: 0;
+    font-size: 11.5px;
+    font-weight: 560;
+  }
+
+  .task-card-meta .badge {
+    flex: 0 0 auto;
+  }
+
+  .task-card .badge {
+    border-color: transparent;
+    padding: 2px 8px;
+    font-size: 10.5px;
+    font-weight: 650;
+    letter-spacing: 0.01em;
+  }
+
+  .task-card .task-title {
+    margin-top: 10px;
+    font-size: 14.5px;
+    font-weight: 650;
+    line-height: 1.4;
+    letter-spacing: -0.01em;
+  }
+
+  .task-card .task-deadline {
+    margin-top: 8px;
+    gap: 6px;
+    color: var(--text-muted);
+    font-size: 12px;
+  }
+
+  .task-card .task-relative {
+    margin-left: 2px;
+    border-radius: 999px;
+    background: var(--panel-soft);
+    color: var(--text-soft);
+    padding: 1px 8px;
+    font-size: 11px;
+    font-weight: 650;
+  }
+
+  .task-card .task-relative-soon {
+    background: color-mix(in srgb, var(--accent-3) 13%, transparent);
+    color: var(--accent-3);
+  }
+
+  .task-card .task-relative-today {
+    background: color-mix(in srgb, var(--warning) 15%, transparent);
+    color: var(--warning);
+  }
+
+  .task-card .task-relative-overdue {
+    background: color-mix(in srgb, var(--danger) 13%, transparent);
+    color: var(--danger);
+  }
+
+  .task-card-overdue {
+    border-color: color-mix(in srgb, var(--danger) 30%, var(--panel-border)) !important;
+  }
+
+  .task-card .task-actions {
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    margin-top: auto;
+    border-top: 1px solid var(--panel-border);
+    padding-top: 10px;
+  }
+
+  .task-card-content > :has(+ .task-actions) {
+    margin-bottom: 14px;
+  }
+
+  .task-card .task-link,
+  .task-card .done-button {
+    display: inline-flex;
+    min-height: 30px;
+    align-items: center;
+    gap: 6px;
+    border-radius: 9px;
+    padding: 0 10px;
+    font-size: 12px;
+    font-weight: 600;
+  }
+
+  .task-card .task-link {
+    border-color: transparent;
+    background: transparent;
+    padding-left: 2px;
+  }
+
+  .task-card .task-link:hover {
+    background: transparent;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+
+  .task-card .done-button {
+    margin-left: auto;
+  }
+
+  .task-card .done-button-cancel {
+    border-color: var(--panel-border);
+    background: var(--surface-background);
+    color: var(--text-soft);
+  }
+
+  .login-submit {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+  }
+
+  .login-submit:disabled {
+    cursor: progress;
+    opacity: 0.9;
+  }
+
+  .login-progress {
+    display: grid;
+    gap: 10px;
+    margin-top: 14px;
+  }
+
+  .login-progress-bar {
+    height: 4px;
+    overflow: hidden;
+    border-radius: 999px;
+    background: var(--panel-soft);
+  }
+
+  .login-progress-bar span {
+    display: block;
+    height: 100%;
+    border-radius: inherit;
+    background: var(--button);
+    transition: width 0.9s ease-out;
+  }
+
+  .login-progress-steps {
+    display: grid;
+    gap: 6px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    color: var(--text-muted);
+    font-size: 12.5px;
+  }
+
+  .login-progress-steps li {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .login-progress-steps li.is-active {
+    color: var(--text);
+    font-weight: 600;
+  }
+
+  .login-progress-steps li.is-done {
+    color: var(--success);
+  }
+
+  .login-progress-marker {
+    display: inline-grid;
+    width: 18px;
+    height: 18px;
+    flex: 0 0 auto;
+    place-items: center;
+    border: 1px solid var(--panel-border);
+    border-radius: 999px;
+    color: inherit;
+  }
+
+  .login-progress-steps li.is-active .login-progress-marker {
+    border-color: color-mix(in srgb, var(--button) 45%, transparent);
+    color: var(--button);
+  }
+
+  .login-progress-steps li.is-done .login-progress-marker {
+    border-color: transparent;
+    background: color-mix(in srgb, var(--success) 15%, transparent);
+  }
+
+  .login-progress-hint {
+    margin: 0;
+    color: var(--text-muted);
+    font-size: 12px;
+    line-height: 1.45;
+  }
+
+  .settings-photo {
+    display: grid;
+    gap: 8px;
+    margin-top: 16px;
+  }
+
+  .settings-photo-label {
+    color: var(--text);
+    font-size: 12px;
+    font-weight: 700;
+  }
+
+  .settings-photo-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+
+  .settings-photo-actions .profile-upload,
+  .profile-photo-remove {
+    display: inline-flex;
+    min-height: 38px;
+    flex: 1 1 150px;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    border: 1px solid var(--panel-border);
+    border-radius: var(--radius-control);
+    padding: 0 14px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+
+  .settings-photo-actions .profile-upload {
+    border-color: color-mix(in srgb, var(--accent) 28%, transparent);
+    background: color-mix(in srgb, var(--accent) 10%, transparent);
+    color: var(--accent);
+  }
+
+  .profile-photo-remove {
+    border-color: color-mix(in srgb, var(--danger) 26%, transparent);
+    background: color-mix(in srgb, var(--danger) 7%, transparent);
+    color: var(--danger);
+  }
+
+  .settings-photo-actions .profile-upload:hover {
+    background: color-mix(in srgb, var(--accent) 16%, transparent);
+  }
+
+  .profile-photo-remove:hover {
+    background: color-mix(in srgb, var(--danger) 13%, transparent);
+  }
+
+  .settings-photo-actions .profile-upload:focus-within,
+  .profile-photo-remove:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+}
+
+/* Phone layout. Unlayered, like the other responsive rules, so it wins. */
+.mobile-profile-button,
+.mobile-sync-note,
+.mobile-course-filter {
+  display: none;
+}
+
+/* Wide tables and long rows must scroll inside their panel, never the page. */
+.grade-tracker,
+.study-planner,
+.dashboard-content {
+  min-width: 0;
+}
+
+.grade-tracker > *,
+.study-planner > *,
+.grade-detail-header > *,
+.grade-summary-stack > * {
+  min-width: 0;
+}
+
+.grade-summary-stack {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+@media (max-width: 1060px) {
+  .mobile-area-navigation {
+    display: flex;
+  }
+
+  .mobile-course-filter {
+    display: grid;
+    gap: 6px;
+    margin-bottom: 12px;
+    color: var(--text-muted);
+    font-size: 12px;
+    font-weight: 650;
+  }
+
+  .mobile-course-filter select {
+    min-height: 40px;
+    width: 100%;
+    border: 1px solid var(--panel-border);
+    border-radius: var(--radius-control);
+    background: var(--input-background, var(--panel));
+    color: var(--text);
+    padding: 0 12px;
+    font-size: 14px;
+  }
+
+  .mobile-sync-note {
+    display: block;
+    margin-top: 4px;
+    color: var(--text-muted);
+    font-size: 12px;
+  }
+
+  .mobile-profile-button {
+    display: inline-flex;
+    flex: 0 0 auto;
+    border: 0;
+    border-radius: 999px;
+    background: transparent;
+    padding: 0;
+    cursor: pointer;
+  }
+
+  .mobile-profile-button .user-avatar {
+    width: 40px;
+    height: 40px;
+    font-size: 14px;
+  }
+
+  .mobile-profile-button:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+}
+
+@media (max-width: 640px) {
+  /* Header: title and avatar on one row, compact actions below. */
+  .dashboard-header {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: start;
+    gap: 12px;
+    margin-bottom: 14px;
+  }
+
+  .dashboard-title {
+    font-size: 1.55rem;
+  }
+
+  .dashboard-actions {
+    grid-column: 1 / -1;
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 8px;
+  }
+
+  .dashboard-actions .ghost-action,
+  .dashboard-actions .theme-toggle {
+    width: 100%;
+    min-height: 38px;
+    justify-content: center;
+    padding: 0 8px;
+    font-size: 12.5px;
+  }
+
+  /* A backdrop-filter on the shell would pin position:fixed children to
+     the shell instead of the screen; the shell is full-bleed here anyway. */
+  .dashboard-shell {
+    backdrop-filter: none;
+  }
+
+  /* Bottom tab bar, within thumb reach. */
+  .mobile-area-navigation {
+    position: fixed;
+    top: auto;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    z-index: 30;
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 4px;
+    margin: 0;
+    border: 0;
+    border-top: 1px solid var(--panel-border);
+    border-radius: 0;
+    background: var(--modal-background, var(--panel));
+    padding: 6px 10px calc(6px + env(safe-area-inset-bottom, 0px));
+    box-shadow: 0 -8px 24px rgba(15, 23, 42, 0.08);
+    backdrop-filter: blur(20px);
+  }
+
+  .mobile-area-navigation button {
+    min-height: 50px;
+    flex-direction: column;
+    gap: 3px;
+    border-radius: 12px;
+    font-size: 11.5px;
+  }
+
+  .mobile-area-navigation button svg {
+    width: 19px;
+    height: 19px;
+  }
+
+  .dashboard-main {
+    padding-bottom: calc(92px + env(safe-area-inset-bottom, 0px));
+  }
+
+  /* Stats: compact 2x2 instead of four full-width blocks. */
+  .stats-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+  }
+
+  .theme-root [data-slot="card"].stat-card {
+    gap: 0;
+    padding-block: 0;
+  }
+
+  .stat-card-content {
+    padding: 11px 13px;
+  }
+
+  .stat-card-top {
+    margin-bottom: 2px;
+  }
+
+  .stat-card p {
+    font-size: 22px;
+  }
+
+  .summary-card {
+    padding: 12px 14px;
+  }
+
+  .timeline-section {
+    scroll-margin-top: 12px;
+  }
+
+  .task-card .task-link,
+  .task-card .done-button {
+    min-height: 36px;
+  }
+
+  /* One swipeable row of filter chips instead of three wrapped rows. */
+  .filter-pills {
+    flex-wrap: nowrap;
+    margin-inline: -12px;
+    overflow-x: auto;
+    padding-inline: 12px;
+    scrollbar-width: none;
+  }
+
+  .filter-pills::-webkit-scrollbar {
+    display: none;
+  }
+
+  .filter-pill {
+    flex: 0 0 auto;
+  }
+
+  /* Login: shorter brand block so the form is visible without scrolling. */
+  .login-layout {
+    padding: 12px;
+  }
+
+  .login-brand {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    align-items: center;
+    column-gap: 12px;
+    padding: 18px 20px;
+  }
+
+  .login-brand-mark {
+    width: 40px;
+    height: 40px;
+    margin: 0;
+    grid-row: span 2;
+  }
+
+  .login-brand .brand-subtitle {
+    margin-top: 2px;
+    font-size: 12.5px;
+    line-height: 1.45;
+  }
+
+  .login-feature-list {
+    display: none;
+  }
+
+  .login-card {
+    padding: 22px 20px 24px;
+  }
+
+  .login-form-footer {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .login-privacy-note {
+    display: inline;
+  }
+
+  .form-field input,
+  .mobile-course-filter select {
+    font-size: 16px;
+  }
+
+  /* Grades: header stacks, actions wrap evenly. */
+  .grade-detail-header {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 12px;
+  }
+
+  .grade-detail-header > .ghost-action {
+    justify-self: start;
+  }
+
+  .grade-detail-actions {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  }
+
+  .grade-detail-actions .ghost-action {
+    justify-content: center;
+  }
+
+  .grade-row-actions {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .settings-modal-header .ghost-action {
+    width: auto;
+    flex: 0 0 auto;
+  }
+
+  .settings-backdrop {
+    align-items: end;
+    padding: 0;
+  }
+
+  .settings-modal {
+    width: 100%;
+    max-height: 88vh;
+    overflow-y: auto;
+    border-radius: 20px 20px 0 0;
+    padding-bottom: calc(20px + env(safe-area-inset-bottom, 0px));
   }
 }
