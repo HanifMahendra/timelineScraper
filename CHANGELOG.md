@@ -7,6 +7,40 @@ implemented repository state, not deployment status.
 
 ### Added
 
+- Released SCELE grades: each scrape reads Moodle's user grade report for the
+  active courses and mirrors it into one gradebook per course (created
+  automatically). Another class group's inaccessible items are skipped, a
+  grade with an unreadable range is skipped rather than assumed out of 100,
+  and scores the user edits by hand are never overwritten ("Pakai nilai
+  SCELE" restores them). Grade sync is best-effort and cannot fail a scrape.
+- Letter grades A..E with user-entered A and C minimums (letters between are
+  spaced evenly); per-letter "average needed on the remaining weight",
+  guaranteed and best-possible letter.
+- Decimal courses: gradebook `finalScale: "four"` scores categories and the
+  final grade on 0.0-4.0.
+- Gradebook SKS and a semester IP/IPK planner (`GET /academic-plan`,
+  `PUT /academic-profile`) that finds the least demanding letter combination
+  to reach a target IP or IPK.
+
+- Completed-task marks are stored per account on the backend
+  (`/task-state/completed`, `users/{uid}/taskState/completed`) and follow the
+  user across devices; old browser-only marks are migrated on sign-in.
+- Dashboard shows when SCELE was last synced, warns when the snapshot is over
+  a day old, and shows staged progress with elapsed time while syncing.
+- An expired SCELE session returns `SCELE_SESSION_EXPIRED` (HTTP 401) and the
+  dashboard offers "Masuk ulang" with the username prefilled.
+- Timeline load failures show a retry panel instead of an empty "aman" list;
+  a never-synced account gets a "Sinkronkan sekarang" prompt.
+- "Tanpa Deadline" section for activities SCELE shows without a due date.
+- Extractor recognises Moodle workshops as assignments and more submission
+  vocabulary (submission, pengumpulan, worksheet, lembar kerja, proyek,
+  laporan, esai) for deadline-bearing files/URLs/pages.
+
+- Discussion forums are extracted as a new `forum` activity type (with their
+  due date when SCELE shows one) and get a Forum badge and filter in the
+  dashboard. Announcement forums are excluded.
+- Active-semester filter (Gasal/Ganjil vs Genap) on top of the academic-year
+  gate, so last semester's still-"in progress" courses are not scraped.
 - Deterministic academic-year course filtering for both the local scraper and
   live SCELE backend, with an Asia/Jakarta 1 July boundary and fail-closed
   handling for old, future, or unlabelled courses.
@@ -26,6 +60,31 @@ implemented repository state, not deployment status.
   authenticated smoke tooling, and an evidence-based verification report.
 
 ### Changed
+
+- Today/upcoming/overdue status is recomputed in the browser every minute from
+  each deadline instead of trusting flags frozen at scrape time.
+- Completed tasks no longer appear twice (in "Mendatang" and "Selesai").
+- Timeline section and filter labels are Indonesian throughout.
+- Profile photos are resized to 256 px JPEG before local storage, with clear
+  errors for non-images, files over 10 MB, or full storage.
+
+- Course discovery reads Moodle's enrolled-courses web service. Dashboard
+  navigation truncated long names (e.g. Desain & Analisis Algoritma, Rekayasa
+  Perangkat Lunak), hiding the year label so those courses were never scraped.
+  The local scraper discovers courses the same way instead of relying on the
+  stale `config/courses.json`.
+- Extraction uses Moodle `modtype_*` classes: labels and folders no longer
+  produce phantom quiz/assignment items, other groups' restricted activities
+  are skipped, titles drop the screen-reader suffix (" Assignment", " Quiz"),
+  and an "Opened:" date alone is no longer treated as a deadline. Existing
+  activities may show as "Diperbarui" once because their titles change.
+- SCELE usernames are trimmed and lowercased (as Moodle does) before deriving
+  the Firebase uid, so case differences no longer create a second account.
+- Backend `multer` 2.4.0 (fixes a high-severity DoS/limit-bypass advisory),
+  `csv-parse` 7.0.3, and `body-parser` override 1.20.8. The remaining 8
+  moderate findings are the `firebase-admin` 12 → `uuid` chain, which needs a
+  major upgrade to `firebase-admin` 14.
+- The root local extractor is regenerated from the live extractor core.
 
 - SCELE course pages are filtered before navigation; local extraction also
   ignores cached HTML whose configured course is outside the active academic

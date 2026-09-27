@@ -17,6 +17,17 @@ interface Props {
 
 type SortType = 'deadline' | 'course' | 'type';
 
+const FILTER_TITLES: Record<FilterType, string> = {
+  all: 'Semua',
+  today: 'Hari ini',
+  overdue: 'Terlambat',
+  assignment: 'Tugas',
+  quiz: 'Quiz',
+  lab: 'Lab',
+  forum: 'Forum',
+  other: 'Lainnya',
+};
+
 function matchesFilter(task: Task, filter: FilterType): boolean {
   if (filter === 'all') return true;
   if (filter === 'overdue') return task.isOverdue;
@@ -120,6 +131,7 @@ export default function DashboardClient({ timeline, selectedCourse, completedIds
       assignment: count('assignment'),
       quiz:       count('quiz'),
       lab:        count('lab'),
+      forum:      count('forum'),
       other:      count('other'),
     };
   }, [courseTasks, completedIds, search]);
@@ -134,17 +146,13 @@ export default function DashboardClient({ timeline, selectedCourse, completedIds
 
   const useFlat = filter !== 'all' || search.length > 0;
 
-  // Untuk mode 'all', pisahkan per bucket; completed tidak masuk urgent
-  const todayFiltered = filtered.filter((t) => {
-    return t.isDueToday && !completedIds.has(taskId(t));
-  });
-  const upcomingFiltered = filtered.filter((t) => !t.isOverdue && !t.isDueToday);
-  const overdueFiltered = filtered.filter((t) => {
-    return t.isOverdue && !completedIds.has(taskId(t));
-  });
-  const completedFiltered = filtered.filter((t) => {
-    return completedIds.has(taskId(t));
-  });
+  // Untuk mode 'all', pisahkan per bucket; tugas selesai hanya muncul di "Selesai".
+  const pending = filtered.filter((t) => !completedIds.has(taskId(t)));
+  const todayFiltered = pending.filter((t) => t.isDueToday);
+  const upcomingFiltered = pending.filter((t) => t.deadlineISO && !t.isOverdue && !t.isDueToday);
+  const noDeadlineFiltered = pending.filter((t) => !t.deadlineISO);
+  const overdueFiltered = pending.filter((t) => t.isOverdue);
+  const completedFiltered = filtered.filter((t) => completedIds.has(taskId(t)));
   const summary = useMemo(
     () => getWeeklySummary(courseTimeline, completedIds),
     [courseTimeline, completedIds]
@@ -190,7 +198,7 @@ export default function DashboardClient({ timeline, selectedCourse, completedIds
 
       {useFlat ? (
         <TimelineSection
-          title={search ? `Hasil pencarian "${search}"` : `Filter: ${filter}`}
+          title={search ? `Hasil pencarian "${search}"` : `Filter: ${FILTER_TITLES[filter]}`}
           tone="search"
           tasks={filtered}
           emptyMessage="Tidak ada tugas yang cocok dengan filter ini."
@@ -208,15 +216,25 @@ export default function DashboardClient({ timeline, selectedCourse, completedIds
             onToggleDone={onToggleDone}
           />
           <TimelineSection
-            title="Upcoming"
+            title="Mendatang"
             tone="upcoming"
             tasks={upcomingFiltered}
             emptyMessage="Tidak ada tugas mendatang."
             completedIds={completedIds}
             onToggleDone={onToggleDone}
           />
+          {noDeadlineFiltered.length > 0 && (
+            <TimelineSection
+              title="Tanpa Deadline"
+              tone="nodeadline"
+              tasks={noDeadlineFiltered}
+              emptyMessage=""
+              completedIds={completedIds}
+              onToggleDone={onToggleDone}
+            />
+          )}
           <TimelineSection
-            title="Overdue"
+            title="Terlambat"
             tone="overdue"
             tasks={overdueFiltered}
             emptyMessage="Tidak ada tugas yang terlambat."

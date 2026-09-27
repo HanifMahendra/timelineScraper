@@ -21,6 +21,7 @@ const FILTER_LABELS: { key: FilterType; label: string }[] = [
   { key: 'assignment', label: 'Tugas' },
   { key: 'quiz',       label: 'Quiz' },
   { key: 'lab',        label: 'Lab' },
+  { key: 'forum',      label: 'Forum' },
 ];
 
 export default function Filters({

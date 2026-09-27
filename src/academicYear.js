@@ -66,13 +66,41 @@ function matchesAcademicYear(value, academicYear) {
   );
 }
 
+const SEMESTER_LABEL_PATTERN = /\b(gasal|ganjil|genap)\b/giu;
+
+// SCELE keeps a Gasal course "in progress" until the next July, so the
+// academic year alone would keep last semester's courses during Genap.
+// July-December is Gasal, February-June is Genap, and January accepts both
+// while Gasal finals and early Genap courses overlap.
+function resolveActiveSemesters(
+  now = new Date(),
+  { timeZone = ACADEMIC_YEAR_TIME_ZONE } = {}
+) {
+  const { month } = calendarParts(now, timeZone);
+  if (month === 1) return ['gasal', 'genap'];
+  return month >= ACADEMIC_YEAR_START_MONTH ? ['gasal'] : ['genap'];
+}
+
+// Courses without a semester label are not rejected here; the academic-year
+// label remains the fail-closed gate.
+function matchesActiveSemester(value, activeSemesters) {
+  const labels = [...String(value || '').matchAll(SEMESTER_LABEL_PATTERN)]
+    .map((match) => (match[1].toLowerCase() === 'ganjil' ? 'gasal' : match[1].toLowerCase()));
+  if (labels.length === 0) return true;
+  return labels.some((label) => activeSemesters.includes(label));
+}
+
 function courseMatchesActiveAcademicYear(
   course,
   { now = new Date(), timeZone = ACADEMIC_YEAR_TIME_ZONE } = {}
 ) {
   const academicYear = resolveAcademicYear(now, { timeZone });
   const yearSource = course?.academicYear ?? course?.name;
-  return matchesAcademicYear(yearSource, academicYear);
+  const semesterSource = course?.semester ?? course?.name;
+  return (
+    matchesAcademicYear(yearSource, academicYear) &&
+    matchesActiveSemester(semesterSource, resolveActiveSemesters(now, { timeZone }))
+  );
 }
 
 function filterCoursesForActiveAcademicYear(courses, options = {}) {
@@ -89,5 +117,7 @@ module.exports = {
   extractAcademicYears,
   filterCoursesForActiveAcademicYear,
   matchesAcademicYear,
+  matchesActiveSemester,
   resolveAcademicYear,
+  resolveActiveSemesters,
 };

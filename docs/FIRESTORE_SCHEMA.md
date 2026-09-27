@@ -260,10 +260,25 @@ gradingScale: "percentage" | "points"
 targetScore?: number | null
 capFinalScoreAt100: boolean
 status: "active" | "archived"
+credits?: number | null          // SKS, 1-24, used by the IP/IPK planner
+finalScale?: "hundred" | "four"  // "four": decimal course, 0.0-4.0 (forces points)
+letterBounds?: { aMin, cMin, dMin? } | null  // in finalScale units
 createdAt: Timestamp
 updatedAt: Timestamp
 archivedAt?: Timestamp
 ```
+
+SCELE grade sync creates one gradebook per active course with the
+deterministic id `scele_<courseId>` (points mode, semester from the course
+name) unless an active user-created gradebook already has that `courseId`.
+Its components use ids `scele_<sha256(courseId:itemId)[0:40]>` and carry
+`sceleSource: { itemId, grade, rangeMax, syncedAt }` plus
+`scoreOrigin: "scele" | "manual"`. Sync only rewrites the score while
+`scoreOrigin` is `"scele"`; a real score change by the user sets `"manual"`,
+and `PATCH … { useSceleScore: true }` restores the SCELE grade. Archived
+gradebooks/components are never recreated or updated. New SCELE components
+are uncategorized with `weightMode: "equal_in_category"`, so they count only
+after the user files them into a weighted category.
 
 `capFinalScoreAt100` defaults to `false`. This prevents bonus contribution from
 being silently hidden. `DELETE /gradebooks/{id}` is a soft archive; recursive
@@ -525,6 +540,31 @@ The singleton contains the IANA timezone, bounded daily capacity, available
 days, minimum/preferred/maximum session duration, optional non-overlapping time
 blocks, weekend choice, planning horizon, and difficulty preference. Defaults
 are Asia/Jakarta, 60 minutes/day, 30-minute sessions, and 14 days.
+
+## Academic profile
+
+```text
+users/{uid}/academicProfile/default
+```
+
+`{ previousGpa, previousCredits, targetGpa, targetSemesterGpa, updatedAt }`,
+each nullable (GPA 0-4, credits integer 0-300). Typed by the user from
+SIAK-NG; written only through `PUT /academic-profile`. `GET /academic-plan`
+combines it with current-semester gradebooks that have `credits`.
+
+## Completed-task marks
+
+```text
+users/{uid}/taskState/completed
+```
+
+`{ ids: string[], updatedAt }`, where each id is the dashboard task key
+(activity URL, else title; at most 512 characters). The list holds at most
+2000 ids; the oldest marks are dropped first. It is written only by the
+backend (`GET`/`PATCH /task-state/completed`) inside a transaction; clients
+have no Rules access, which the default deny already enforces. The dashboard
+keeps a per-uid local cache and migrates the old shared
+`scele-completed-tasks` local key into this document on first sign-in.
 
 ## Study plans, drafts, and sessions
 

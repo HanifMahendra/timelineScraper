@@ -135,8 +135,13 @@ gcloud run services list --platform managed
 
 - Firebase Hosting deploy updates only the static dashboard from `dashboard/out`.
 - Hugging Face Space update changes live `/auth/login`, `/auth/logout`,
-  `/scrape`, `/activities`, `/gradebooks` (termasuk `/imports`), and
-  `/healthz` backend behavior.
+  `/scrape`, `/activities`, `/gradebooks` (termasuk `/imports`),
+  `/task-state/completed`, `/academic-plan`, `/academic-profile`, and
+  `/healthz` backend behavior. `/scrape` also fetches each active course's
+  grade report and syncs released grades into gradebooks.
+- Deploy the backend before a dashboard that calls a new endpoint. The
+  dashboard's "Tandai selesai" uses `/task-state/completed`; against an older
+  backend each toggle is rolled back with a warning.
 - Cloud Run deploy only matters if `NEXT_PUBLIC_AUTH_API_BASE_URL` is changed to a Cloud Run URL and the dashboard is rebuilt/redeployed.
 
 ## Study Planning Environment

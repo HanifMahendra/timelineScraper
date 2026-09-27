@@ -932,6 +932,57 @@
     color: var(--warning);
   }
 
+  .status-banner-with-action {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+  }
+
+  .status-banner-with-action .ghost-action {
+    min-height: 30px;
+    flex: 0 0 auto;
+  }
+
+  .timeline-state-panel {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .sync-progress {
+    position: relative;
+    height: 3px;
+    margin-top: 8px;
+    overflow: hidden;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--accent) 16%, transparent);
+  }
+
+  .sync-progress span {
+    position: absolute;
+    inset: 0 auto 0 0;
+    width: 35%;
+    border-radius: inherit;
+    background: var(--accent);
+    animation: sync-progress-slide 1.4s ease-in-out infinite;
+  }
+
+  @keyframes sync-progress-slide {
+    from { transform: translateX(-100%); }
+    to { transform: translateX(300%); }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .sync-progress span { animation: none; width: 100%; opacity: 0.5; }
+  }
+
+  .timeline-section-nodeadline {
+    --section: var(--text-muted);
+  }
+
   .status-banner-error {
     border-color: color-mix(in srgb, var(--danger) 46%, transparent);
     background: color-mix(in srgb, var(--danger) 10%, var(--panel));
@@ -1271,6 +1322,11 @@
   .badge-lab {
     background: color-mix(in srgb, var(--success) 14%, transparent);
     color: var(--success);
+  }
+
+  .badge-forum {
+    background: color-mix(in srgb, var(--accent-3) 14%, transparent);
+    color: var(--accent-3);
   }
 
   .badge-other {
@@ -2116,6 +2172,168 @@
   .grade-source-actual,
   .grade-score-known {
     color: var(--success);
+  }
+
+  .grade-source-scele {
+    color: var(--accent);
+  }
+
+  .grade-source-manual {
+    color: var(--accent-3);
+  }
+
+  .grade-letter-preview {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin: 4px 0 12px;
+  }
+
+  .grade-letter-preview span {
+    border: 1px solid var(--panel-border);
+    border-radius: 999px;
+    padding: 3px 9px;
+    color: var(--text-soft);
+    font-size: 11px;
+  }
+
+  .grade-letter-preview strong {
+    color: var(--text);
+  }
+
+  .letter-metrics {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+    gap: 8px;
+    margin: 4px 0 12px;
+  }
+
+  .letter-metrics > div {
+    border-radius: var(--radius-control);
+    background: color-mix(in srgb, var(--panel-soft) 72%, transparent);
+    padding: 10px;
+  }
+
+  .letter-metrics span {
+    color: var(--text-muted);
+    font-size: 10px;
+  }
+
+  .letter-metrics strong {
+    display: block;
+    margin-top: 4px;
+    color: var(--text);
+    font-size: 20px;
+  }
+
+  .letter-metrics small {
+    color: var(--text-muted);
+    font-size: 11px;
+  }
+
+  .letter-target-list,
+  .academic-plan-list {
+    display: grid;
+    gap: 6px;
+    margin: 0 0 10px;
+    padding: 0;
+    list-style: none;
+  }
+
+  .letter-target {
+    display: grid;
+    grid-template-columns: 38px 70px minmax(0, 1fr);
+    align-items: center;
+    gap: 10px;
+    border: 1px solid var(--panel-border);
+    border-radius: var(--radius-control);
+    padding: 8px 10px;
+    color: var(--text-soft);
+    font-size: 12px;
+  }
+
+  .letter-target strong {
+    color: var(--text);
+    font-size: 15px;
+  }
+
+  .letter-target-min {
+    color: var(--text-muted);
+  }
+
+  .letter-target-already_achieved {
+    border-color: color-mix(in srgb, var(--success) 45%, transparent);
+    color: var(--success);
+  }
+
+  .letter-target-reachable {
+    color: var(--accent);
+  }
+
+  .letter-target-requires_perfect_score {
+    color: var(--warning);
+  }
+
+  .letter-target-impossible {
+    opacity: 0.55;
+    text-decoration: line-through;
+  }
+
+  .academic-plan-status {
+    margin: 0 0 10px;
+    color: var(--text-soft);
+    font-size: 12px;
+  }
+
+  .academic-plan-impossible {
+    color: var(--danger);
+  }
+
+  .academic-plan-already_guaranteed {
+    color: var(--success);
+  }
+
+  .academic-plan-list li {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    border: 1px solid var(--panel-border);
+    border-radius: var(--radius-control);
+    padding: 9px 11px;
+  }
+
+  .academic-plan-list li > div {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+  }
+
+  .academic-plan-list span {
+    color: var(--text-muted);
+    font-size: 11px;
+  }
+
+  .academic-plan-choice {
+    align-items: flex-end;
+    text-align: right;
+  }
+
+  .academic-plan-choice strong {
+    color: var(--accent);
+    font-size: 18px;
+  }
+
+  .gradebook-card-letters {
+    display: flex;
+    justify-content: space-between;
+    gap: 8px;
+    margin: -6px 0 12px;
+    color: var(--text-soft);
+    font-size: 11px;
+    font-weight: 800;
   }
 
   .grade-source-assumed {

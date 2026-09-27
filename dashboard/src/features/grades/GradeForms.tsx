@@ -9,6 +9,7 @@ import type {
   ComponentInput,
   ComponentType,
   ComponentWeightMode,
+  FinalScale,
   GradeCategory,
   GradeComponent,
   Gradebook,
@@ -18,6 +19,7 @@ import type {
   ScenarioInput,
   ScoreStatus,
 } from './types';
+import { DEFAULT_LETTER_BOUNDS, previewThresholds } from './letterGrades';
 
 function optionalNumber(value: string): number | undefined {
   if (value.trim() === '') return undefined;
@@ -72,6 +74,24 @@ export function GradebookForm({
   const [capFinalScoreAt100, setCapFinalScoreAt100] = useState(
     initial?.capFinalScoreAt100 ?? false
   );
+  const [credits, setCredits] = useState(
+    initial?.credits ? String(initial.credits) : ''
+  );
+  const [finalScale, setFinalScale] = useState<FinalScale>(
+    initial?.finalScale ?? 'hundred'
+  );
+  const initialBounds = initial?.letterBounds ?? DEFAULT_LETTER_BOUNDS[finalScale];
+  const [aMin, setAMin] = useState(String(initialBounds.aMin));
+  const [cMin, setCMin] = useState(String(initialBounds.cMin));
+  const preview = previewThresholds(Number(aMin), Number(cMin));
+
+  function changeFinalScale(next: FinalScale) {
+    setFinalScale(next);
+    // Bounds are expressed in the scale's own units, so reset them.
+    setAMin(String(DEFAULT_LETTER_BOUNDS[next].aMin));
+    setCMin(String(DEFAULT_LETTER_BOUNDS[next].cMin));
+    if (next === 'four') setGradingScale('points');
+  }
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -83,6 +103,9 @@ export function GradebookForm({
       gradingScale,
       targetScore: targetScore === '' ? null : optionalNumber(targetScore),
       capFinalScoreAt100,
+      credits: credits === '' ? null : optionalNumber(credits),
+      finalScale,
+      letterBounds: { aMin: Number(aMin), cMin: Number(cMin) },
     });
   }
 
@@ -126,16 +149,64 @@ export function GradebookForm({
           />
         </label>
         <label className="grade-field">
-          <span>Mode nilai</span>
+          <span>SKS</span>
+          <input
+            type="number"
+            min="1"
+            max="24"
+            step="1"
+            value={credits}
+            onChange={(event) => setCredits(event.target.value)}
+            placeholder="Untuk hitung IP"
+          />
+        </label>
+        <label className="grade-field">
+          <span>Skala nilai akhir</span>
           <select
-            value={gradingScale}
-            onChange={(event) =>
-              setGradingScale(event.target.value as GradingScale)
-            }
+            value={finalScale}
+            onChange={(event) => changeFinalScale(event.target.value as FinalScale)}
           >
-            <option value="percentage">Persentase</option>
-            <option value="points">Poin</option>
+            <option value="hundred">0–100</option>
+            <option value="four">Desimal 0.0–4.0</option>
           </select>
+        </label>
+        {finalScale === 'hundred' && (
+          <label className="grade-field">
+            <span>Mode nilai komponen</span>
+            <select
+              value={gradingScale}
+              onChange={(event) =>
+                setGradingScale(event.target.value as GradingScale)
+              }
+            >
+              <option value="percentage">Persentase</option>
+              <option value="points">Poin</option>
+            </select>
+          </label>
+        )}
+        <label className="grade-field">
+          <span>Batas bawah A</span>
+          <input
+            type="number"
+            min="0"
+            max={finalScale === 'four' ? 4.4 : 110}
+            step="0.01"
+            value={aMin}
+            onChange={(event) => setAMin(event.target.value)}
+            required
+          />
+        </label>
+        <label className="grade-field">
+          <span>Batas bawah C</span>
+          <input
+            type="number"
+            min="0"
+            max={finalScale === 'four' ? 4.4 : 110}
+            step="0.01"
+            value={cMin}
+            onChange={(event) => setCMin(event.target.value)}
+            required
+          />
         </label>
         <label className="grade-field">
           <span>Target nilai akhir</span>
@@ -161,6 +232,23 @@ export function GradebookForm({
       <p className="grade-form-note">
         Default tidak dibatasi agar kontribusi bonus tidak tersembunyi.
       </p>
+      {finalScale === 'four' && (
+        <p className="grade-form-note">
+          Skala desimal: isi nilai tiap komponen/kategori dalam 0.0–4.0 (poin dari 4). Nilai akhir
+          ditampilkan dalam 0.0–4.0.
+        </p>
+      )}
+      {preview ? (
+        <div className="grade-letter-preview" aria-label="Pratinjau batas huruf mutu">
+          {preview.map(({ letter, min }) => (
+            <span key={letter}>
+              <strong>{letter}</strong> ≥ {min.toLocaleString('id-ID')}
+            </span>
+          ))}
+        </div>
+      ) : (
+        <p className="form-error">Batas A harus lebih tinggi dari batas C.</p>
+      )}
       <FormActions busy={busy} editing={Boolean(initial)} onCancel={onCancel} />
     </form>
   );
@@ -338,7 +426,7 @@ export function ComponentForm({
   );
   const [maxScore, setMaxScore] = useState(
     initial?.maxScore === null || initial?.maxScore === undefined
-      ? ''
+      ? gradebook.finalScale === 'four' ? '4' : ''
       : String(initial.maxScore)
   );
   const [earnedScore, setEarnedScore] = useState(
