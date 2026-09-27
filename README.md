@@ -6,6 +6,12 @@ membantu memantau nilai dan merencanakan target IP.
 
 Website: <https://timeline-automated-scraper.web.app>
 
+## Tampilan
+
+Screenshot website (halaman login dan dashboard)
+
+*— Soon —*
+
 ## Latar belakang
 
 Deadline di SCELE tersebar di halaman masing-masing mata kuliah. Untuk tahu
