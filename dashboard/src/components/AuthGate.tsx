@@ -6,11 +6,14 @@ import {
   BrainCircuit,
   CalendarClock,
   CalendarDays,
+  Check,
   ChevronRight,
   ImageIcon,
   ListTodo,
+  Loader2,
   LogOut,
   RefreshCw,
+  Trash2,
 } from 'lucide-react';
 import {
   browserLocalPersistence,
@@ -198,6 +201,44 @@ function getRelativeDeadline(task: Task): string {
   return `${diffDays} hari lagi`;
 }
 
+const LOGIN_STEPS = ['Menghubungkan ke server', 'Masuk ke akun SCELE', 'Menyiapkan dashboard'] as const;
+// The backend reports no progress; the first step follows typical timings
+// and the last one starts only once SCELE login has actually succeeded.
+const LOGIN_SERVER_STEP_MS = 4_000;
+const LOGIN_SLOW_HINT_MS = 15_000;
+
+function LoginProgress({ elapsedMs, phase }: { elapsedMs: number; phase: 'scele' | 'account' }) {
+  const activeStep = phase === 'account' ? 2 : elapsedMs < LOGIN_SERVER_STEP_MS ? 0 : 1;
+  // Eases toward 90% while waiting on SCELE; never claims completion early.
+  const percent = phase === 'account' ? 95 : Math.round(90 * (1 - Math.exp(-elapsedMs / 12_000)));
+  return (
+    <div className="login-progress" role="status" aria-live="polite">
+      <div className="login-progress-bar" aria-hidden="true">
+        <span style={{ width: `${Math.max(4, percent)}%` }} />
+      </div>
+      <ol className="login-progress-steps">
+        {LOGIN_STEPS.map((label, index) => (
+          <li
+            key={label}
+            className={index < activeStep ? 'is-done' : index === activeStep ? 'is-active' : undefined}
+            aria-current={index === activeStep ? 'step' : undefined}
+          >
+            <span className="login-progress-marker" aria-hidden="true">
+              {index < activeStep ? <Check size={11} /> : index === activeStep ? <Loader2 size={11} className="animate-spin" /> : null}
+            </span>
+            {label}
+          </li>
+        ))}
+      </ol>
+      {phase === 'scele' && elapsedMs >= LOGIN_SLOW_HINT_MS && (
+        <p className="login-progress-hint">
+          Server sedang bangun dari mode tidur. Login pertama bisa butuh hingga 1 menit.
+        </p>
+      )}
+    </div>
+  );
+}
+
 export default function AuthGate() {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
@@ -205,6 +246,8 @@ export default function AuthGate() {
   const [password, setPassword] = useState('');
   const [remember, setRemember] = useState(getStoredRememberLogin);
   const [submitting, setSubmitting] = useState(false);
+  const [loginStartedAt, setLoginStartedAt] = useState<number | null>(null);
+  const [loginPhase, setLoginPhase] = useState<'scele' | 'account'>('scele');
   const [error, setError] = useState<string | null>(null);
   const [timeline, setTimeline] = useState<TimelineData>(EMPTY_TIMELINE);
   const [timelineLoad, setTimelineLoad] = useState<TimelineLoadState>('loading');
@@ -222,11 +265,12 @@ export default function AuthGate() {
   const userRef = useRef<User | null>(null);
 
   // Deadline status is re-evaluated every minute (every second while syncing,
-  // for the elapsed-time indicator).
+  // or logging in, for the elapsed-time indicators).
+  const fastTick = scraping || submitting;
   useEffect(() => {
-    const timer = window.setInterval(() => setNowMs(Date.now()), scraping ? 1_000 : 60_000);
+    const timer = window.setInterval(() => setNowMs(Date.now()), fastTick ? 1_000 : 60_000);
     return () => window.clearInterval(timer);
-  }, [scraping]);
+  }, [fastTick]);
 
   const loadTimeline = useCallback(async (uid: string, { silent = false }: { silent?: boolean } = {}) => {
     if (!silent) setTimelineLoad('loading');
@@ -362,9 +406,13 @@ export default function AuthGate() {
   async function handleLogin(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setSubmitting(true);
+    setLoginStartedAt(Date.now());
+    setLoginPhase('scele');
+    setNowMs(Date.now());
     setError(null);
     try {
       const customToken = await loginWithScele(username, password);
+      setLoginPhase('account');
       const auth = getFirebaseAuth();
       await setPersistence(auth, remember ? browserLocalPersistence : browserSessionPersistence);
       try {
@@ -381,6 +429,7 @@ export default function AuthGate() {
       setError(displayApiError(err, 'Login gagal.'));
     } finally {
       setSubmitting(false);
+      setLoginStartedAt(null);
     }
   }
 
@@ -509,6 +558,7 @@ export default function AuthGate() {
                     value={username}
                     onChange={(e) => setUsername(e.target.value)}
                     autoComplete="username"
+                    disabled={submitting}
                     placeholder="Username SCELE"
                     required
                   />
@@ -521,6 +571,7 @@ export default function AuthGate() {
                     onChange={(e) => setPassword(e.target.value)}
                     type="password"
                     autoComplete="current-password"
+                    disabled={submitting}
                     placeholder="Password SCELE"
                     required
                   />
@@ -532,17 +583,23 @@ export default function AuthGate() {
                       type="checkbox"
                       checked={remember}
                       onChange={(e) => setRemember(e.target.checked)}
+                      disabled={submitting}
                     />
                     <span>Ingat saya</span>
                   </label>
                   <span className="login-privacy-note">Password tidak disimpan</span>
                 </div>
 
-                {error && <p className="form-error">{error}</p>}
+                {error && <p className="form-error" role="alert">{error}</p>}
 
-                <button type="submit" disabled={submitting} className="primary-action">
-                  {submitting ? 'Menghubungkan...' : 'Masuk'}
+                <button type="submit" disabled={submitting} className="primary-action login-submit" aria-busy={submitting}>
+                  {submitting && <Loader2 size={16} className="animate-spin" aria-hidden="true" />}
+                  {submitting ? 'Sedang masuk…' : 'Masuk'}
                 </button>
+
+                {submitting && loginStartedAt !== null && (
+                  <LoginProgress elapsedMs={Math.max(0, nowMs - loginStartedAt)} phase={loginPhase} />
+                )}
               </form>
             </div>
           </section>
@@ -735,7 +792,24 @@ export default function AuthGate() {
                     ? 'Grade tracker manual dengan perhitungan transparan'
                     : 'Jadwal deterministik dari roadmap, deadline, dan preferensi kamu'}
               </p>
+              {!panelStatus && <p className="mobile-sync-note">{idleSyncMessage}</p>}
             </div>
+
+            <button
+              type="button"
+              className="mobile-profile-button"
+              onClick={() => setSettingsOpen(true)}
+              aria-label={`Buka pengaturan profil ${displayName}`}
+            >
+              <span className={`user-avatar user-avatar-${avatarTone}`}>
+                {profile.photo ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={profile.photo} alt="" />
+                ) : (
+                  avatarInitials
+                )}
+              </span>
+            </button>
 
             <div className="dashboard-actions">
               <ThemeSwitcher />
@@ -790,6 +864,20 @@ export default function AuthGate() {
                 <button type="button" className="ghost-action" onClick={() => handleScrape(user)}>Sinkronkan</button>
               ) : null}
             </div>
+          )}
+
+          {activeArea === 'timeline' && courses.length > 1 && (
+            <label className="mobile-course-filter">
+              <span>Kelas</span>
+              <select value={selectedCourse} onChange={(event) => setSelectedCourse(event.target.value)}>
+                <option value="all">Semua kelas ({taskCount})</option>
+                {courses.map((course) => (
+                  <option key={course} value={course}>
+                    {course} ({courseCounts.get(course) ?? 0})
+                  </option>
+                ))}
+              </select>
+            </label>
           )}
 
           {activeArea === 'timeline' && completionError && (
@@ -877,23 +965,29 @@ export default function AuthGate() {
               </small>
             </label>
 
-            <label className="profile-upload">
-              <ImageIcon size={15} aria-hidden="true" />
-              <span>Ganti foto profil</span>
-              <input type="file" accept="image/*" onChange={handlePhotoChange} />
-            </label>
+            <div className="settings-photo">
+              <span className="settings-photo-label">Foto profil</span>
+              <div className="settings-photo-actions">
+                <label className="profile-upload">
+                  <ImageIcon size={15} aria-hidden="true" />
+                  <span>{profile.photo ? 'Ganti foto' : 'Unggah foto'}</span>
+                  <input type="file" accept="image/*" onChange={handlePhotoChange} />
+                </label>
+                {profile.photo && (
+                  <button
+                    type="button"
+                    className="profile-photo-remove"
+                    onClick={() => saveProfile({ ...profile, photo: '' })}
+                  >
+                    <Trash2 size={15} aria-hidden="true" />
+                    Hapus foto
+                  </button>
+                )}
+              </div>
+              <small className="form-hint">JPG, PNG, atau WebP, maksimal 10 MB.</small>
+            </div>
 
             {profileError && <p className="form-error" role="alert">{profileError}</p>}
-
-            {profile.photo && (
-              <button
-                type="button"
-                className="ghost-action ghost-action-danger"
-                onClick={() => saveProfile({ ...profile, photo: '' })}
-              >
-                Hapus foto
-              </button>
-            )}
           </section>
         </div>
       )}

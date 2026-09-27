@@ -135,38 +135,30 @@ export default function TaskCard({ task, completed = false, onToggleDone }: Prop
       className={`task-card task-card-${urgency} ${completed ? 'task-card-completed' : ''}`}
     >
       <CardContent className="task-card-content">
-        <div className="task-card-top">
-          <div className="task-title-wrap">
-            <p
-              className={`task-title ${completed ? 'task-title-done' : ''}`}
-            >
-              {task.title}
-            </p>
-            <p className="task-course">{task.course}</p>
-          </div>
-
-          <div className="task-badges">
-            <span className={`badge badge-type badge-${typeConf.tone}`}>
-              {typeConf.label}
+        <div className="task-card-meta">
+          <span className={`badge badge-type badge-${typeConf.tone}`}>
+            {typeConf.label}
+          </span>
+          <span className="task-course" title={task.course}>{task.course}</span>
+          {changeConf && (
+            <span className={`badge badge-change badge-${changeConf.tone}`}>
+              {changeConf.label}
             </span>
-            {urgencyConf.label && (
-              <span className={`badge badge-urgency badge-${urgencyConf.tone}`}>
-                {urgencyConf.label}
-              </span>
-            )}
-            {changeConf && (
-              <span className={`badge badge-change badge-${changeConf.tone}`}>
-                {changeConf.label}
-              </span>
-            )}
-          </div>
+          )}
+          {completed && (
+            <span className="badge badge-urgency badge-completed">{urgencyConf.label}</span>
+          )}
         </div>
 
+        <p className={`task-title ${completed ? 'task-title-done' : ''}`}>
+          {task.title}
+        </p>
+
         <div className="task-deadline">
-          <CalendarClock size={15} aria-hidden="true" />
+          <CalendarClock size={14} aria-hidden="true" />
           <span>{deadlineLabel}</span>
           {relativeTime && (
-            <span className="task-relative">
+            <span className={`task-relative task-relative-${urgency}`}>
               {relativeTime}
             </span>
           )}
@@ -196,6 +188,7 @@ export default function TaskCard({ task, completed = false, onToggleDone }: Prop
           )}
           {onToggleDone && (
             <button
+              type="button"
               onClick={() => onToggleDone(id)}
               className={`done-button ${completed ? 'done-button-cancel' : ''}`}
             >
