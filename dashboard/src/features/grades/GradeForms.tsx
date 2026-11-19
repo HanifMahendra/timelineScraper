@@ -136,7 +136,7 @@ export function GradebookForm({
             value={semester}
             onChange={(event) => setSemester(event.target.value)}
             maxLength={60}
-            placeholder="Contoh: 2026/2027 Ganjil"
+            placeholder="Contoh: Gasal 2026/2027"
           />
         </label>
         <label className="grade-field">
