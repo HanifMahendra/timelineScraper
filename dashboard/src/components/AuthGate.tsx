@@ -8,6 +8,8 @@ import {
   CalendarDays,
   Check,
   ChevronRight,
+  Eye,
+  EyeOff,
   ImageIcon,
   ListTodo,
   Loader2,
@@ -260,9 +262,56 @@ export default function AuthGate() {
   const [profile, setProfile] = useState<LocalProfile>({ name: '', photo: '' });
   const [profileError, setProfileError] = useState<string | null>(null);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const [activeArea, setActiveArea] = useState<'timeline' | 'grades' | 'study'>('timeline');
   const [nowMs, setNowMs] = useState(() => Date.now());
   const userRef = useRef<User | null>(null);
+  const settingsDialogRef = useRef<HTMLDialogElement | null>(null);
+
+  useEffect(() => {
+    const dialog = settingsDialogRef.current;
+    if (!dialog) return;
+    if (settingsOpen && !dialog.open) {
+      dialog.showModal();
+    } else if (!settingsOpen && dialog.open) {
+      dialog.close();
+    }
+  }, [settingsOpen]);
+
+  // Progressive enhancement fallback for browsers without native <dialog closedby="any"> (Safari).
+  useEffect(() => {
+    const dialog = settingsDialogRef.current;
+    if (!dialog || !settingsOpen) return;
+    if ('closedBy' in HTMLDialogElement.prototype) return;
+
+    const isOutside = (event: PointerEvent) => {
+      const rect = dialog.getBoundingClientRect();
+      return (
+        event.clientX < rect.left ||
+        event.clientX > rect.right ||
+        event.clientY < rect.top ||
+        event.clientY > rect.bottom
+      );
+    };
+
+    let pressedOutside = false;
+    const onPointerDown = (event: PointerEvent) => {
+      pressedOutside = isOutside(event);
+    };
+    const onPointerUp = (event: PointerEvent) => {
+      if (pressedOutside && isOutside(event)) {
+        dialog.close();
+      }
+      pressedOutside = false;
+    };
+
+    dialog.addEventListener('pointerdown', onPointerDown);
+    dialog.addEventListener('pointerup', onPointerUp);
+    return () => {
+      dialog.removeEventListener('pointerdown', onPointerDown);
+      dialog.removeEventListener('pointerup', onPointerUp);
+    };
+  }, [settingsOpen]);
 
   // Deadline status is re-evaluated every minute (every second while syncing,
   // or logging in, for the elapsed-time indicators).
@@ -562,29 +611,51 @@ export default function AuthGate() {
                   <p>Gunakan akun SCELE kamu untuk melanjutkan.</p>
                 </div>
 
-                <label className="form-field">
+                <label className="form-field" htmlFor="scele-username">
                   <span>Username</span>
                   <input
+                    id="scele-username"
+                    name="username"
+                    type="text"
                     value={username}
                     onChange={(e) => setUsername(e.target.value)}
                     autoComplete="username"
+                    spellCheck={false}
+                    autoCapitalize="none"
+                    autoCorrect="off"
+                    enterKeyHint="next"
                     disabled={submitting}
                     placeholder="Username SCELE"
                     required
                   />
                 </label>
 
-                <label className="form-field">
+                <label className="form-field" htmlFor="scele-password">
                   <span>Password</span>
-                  <input
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    type="password"
-                    autoComplete="current-password"
-                    disabled={submitting}
-                    placeholder="Password SCELE"
-                    required
-                  />
+                  <div className="password-field-wrap">
+                    <input
+                      id="scele-password"
+                      name="password"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      type={showPassword ? 'text' : 'password'}
+                      autoComplete="current-password"
+                      enterKeyHint="done"
+                      disabled={submitting}
+                      placeholder="Password SCELE"
+                      required
+                    />
+                    <button
+                      type="button"
+                      className="password-toggle"
+                      onClick={() => setShowPassword((prev) => !prev)}
+                      disabled={submitting}
+                      aria-label={showPassword ? 'Sembunyikan password' : 'Tampilkan password'}
+                      aria-pressed={showPassword}
+                    >
+                      {showPassword ? <EyeOff size={16} aria-hidden="true" /> : <Eye size={16} aria-hidden="true" />}
+                    </button>
+                  </div>
                 </label>
 
                 <div className="login-form-footer">
@@ -933,74 +1004,85 @@ export default function AuthGate() {
         </section>
       </div>
 
-      {settingsOpen && (
-        <div className="settings-backdrop" role="presentation" onClick={() => setSettingsOpen(false)}>
-          <section className="settings-modal" role="dialog" aria-modal="true" aria-label="Pengaturan profil" onClick={(event) => event.stopPropagation()}>
-            <div className="settings-modal-header">
-              <div>
-                <p className="brand-kicker">Pengaturan</p>
-                <h2 className="panel-title">Profil dashboard</h2>
-              </div>
-              <button type="button" className="ghost-action" onClick={() => setSettingsOpen(false)}>
-                Selesai
-              </button>
-            </div>
-
-            <div className="settings-profile-preview">
-              <div className={`user-avatar settings-avatar user-avatar-${avatarTone}`}>
-                {profile.photo ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img src={profile.photo} alt="" />
-                ) : (
-                  avatarInitials
-                )}
-              </div>
-              <div>
-                <p>{displayName}</p>
-                <span>Disimpan khusus untuk akun SCELE ini</span>
-              </div>
-            </div>
-
-            <label className="form-field">
-              <span>Username tampilan</span>
-              <input
-                value={profile.name}
-                onChange={(event) => saveProfile({ ...profile, name: event.target.value })}
-                placeholder={fallbackName}
-                maxLength={PROFILE_NAME_MAX_LENGTH}
-                aria-describedby="profile-name-limit"
-              />
-              <small id="profile-name-limit" className="form-hint">
-                {Array.from(profile.name).length}/{PROFILE_NAME_MAX_LENGTH} karakter
-              </small>
-            </label>
-
-            <div className="settings-photo">
-              <span className="settings-photo-label">Foto profil</span>
-              <div className="settings-photo-actions">
-                <label className="profile-upload">
-                  <ImageIcon size={15} aria-hidden="true" />
-                  <span>{profile.photo ? 'Ganti foto' : 'Unggah foto'}</span>
-                  <input type="file" accept="image/*" onChange={handlePhotoChange} />
-                </label>
-                {profile.photo && (
-                  <button
-                    type="button"
-                    className="profile-photo-remove"
-                    onClick={() => saveProfile({ ...profile, photo: '' })}
-                  >
-                    <Trash2 size={15} aria-hidden="true" />
-                    Hapus foto
-                  </button>
-                )}
-              </div>
-              <small className="form-hint">JPG, PNG, atau WebP, maksimal 10 MB.</small>
-            </div>
-
-            {profileError && <p className="form-error" role="alert">{profileError}</p>}
-          </section>
+      <dialog
+        ref={settingsDialogRef}
+        className="settings-modal"
+        aria-labelledby="settings-modal-title"
+        {...({ closedby: 'any' } as Record<string, string>)}
+        onClose={() => setSettingsOpen(false)}
+      >
+        <div className="settings-modal-header">
+          <div>
+            <p className="brand-kicker">Pengaturan</p>
+            <h2 id="settings-modal-title" className="panel-title">Profil dashboard</h2>
+          </div>
+          <button
+            type="button"
+            className="ghost-action"
+            onClick={() => settingsDialogRef.current?.close()}
+          >
+            Selesai
+          </button>
         </div>
-      )}
+
+        <div className="settings-profile-preview">
+          <div className={`user-avatar settings-avatar user-avatar-${avatarTone}`}>
+            {profile.photo ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={profile.photo} alt="" />
+            ) : (
+              avatarInitials
+            )}
+          </div>
+          <div>
+            <p>{displayName}</p>
+            <span>Disimpan khusus untuk akun SCELE ini</span>
+          </div>
+        </div>
+
+        <label className="form-field" htmlFor="profile-display-name">
+          <span>Username tampilan</span>
+          <input
+            id="profile-display-name"
+            name="profileDisplayName"
+            type="text"
+            autoComplete="nickname"
+            autoFocus
+            value={profile.name}
+            onChange={(event) => saveProfile({ ...profile, name: event.target.value })}
+            placeholder={fallbackName}
+            maxLength={PROFILE_NAME_MAX_LENGTH}
+            aria-describedby="profile-name-limit"
+          />
+          <small id="profile-name-limit" className="form-hint">
+            {Array.from(profile.name).length}/{PROFILE_NAME_MAX_LENGTH} karakter
+          </small>
+        </label>
+
+        <div className="settings-photo">
+          <span className="settings-photo-label">Foto profil</span>
+          <div className="settings-photo-actions">
+            <label className="profile-upload">
+              <ImageIcon size={15} aria-hidden="true" />
+              <span>{profile.photo ? 'Ganti foto' : 'Unggah foto'}</span>
+              <input type="file" accept="image/*" onChange={handlePhotoChange} />
+            </label>
+            {profile.photo && (
+              <button
+                type="button"
+                className="profile-photo-remove"
+                onClick={() => saveProfile({ ...profile, photo: '' })}
+              >
+                <Trash2 size={15} aria-hidden="true" />
+                Hapus foto
+              </button>
+            )}
+          </div>
+          <small className="form-hint">JPG, PNG, atau WebP, maksimal 10 MB.</small>
+        </div>
+
+        {profileError && <p className="form-error" role="alert">{profileError}</p>}
+      </dialog>
     </div>
   );
 }

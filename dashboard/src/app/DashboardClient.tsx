@@ -42,7 +42,7 @@ function matchesSearch(task: Task, query: string): boolean {
 }
 
 function sortByDeadline(tasks: Task[]): Task[] {
-  return [...tasks].sort((a, b) => {
+  return tasks.toSorted((a, b) => {
     if (a.deadlineISO && b.deadlineISO) return a.deadlineISO.localeCompare(b.deadlineISO);
     if (a.deadlineISO) return -1;
     if (b.deadlineISO) return 1;
@@ -52,10 +52,10 @@ function sortByDeadline(tasks: Task[]): Task[] {
 
 function sortTasks(tasks: Task[], sort: SortType): Task[] {
   if (sort === 'course') {
-    return [...tasks].sort((a, b) => a.course.localeCompare(b.course) || a.title.localeCompare(b.title));
+    return tasks.toSorted((a, b) => a.course.localeCompare(b.course) || a.title.localeCompare(b.title));
   }
   if (sort === 'type') {
-    return [...tasks].sort((a, b) => a.type.localeCompare(b.type) || a.title.localeCompare(b.title));
+    return tasks.toSorted((a, b) => a.type.localeCompare(b.type) || a.title.localeCompare(b.title));
   }
   return sortByDeadline(tasks);
 }
