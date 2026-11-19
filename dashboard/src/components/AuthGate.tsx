@@ -3,6 +3,7 @@
 import { ChangeEvent, FormEvent, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   BookOpenCheck,
+  Bot,
   BrainCircuit,
   CalendarDays,
   Check,
@@ -252,7 +253,7 @@ export default function AuthGate() {
   const [showPassword, setShowPassword] = useState(false);
   const [undoToast, setUndoToast] = useState<{ task: Task; markedDone: boolean; text: string } | null>(null);
   const [toastAnnouncement, setToastAnnouncement] = useState('');
-  const [activeArea, setActiveArea] = useState<'timeline' | 'grades' | 'study'>('timeline');
+  const [activeArea, setActiveArea] = useState<'timeline' | 'discord' | 'grades' | 'study'>('timeline');
   const [nowMs, setNowMs] = useState(() => Date.now());
   const userRef = useRef<User | null>(null);
   const settingsDialogRef = useRef<HTMLDialogElement | null>(null);
@@ -870,6 +871,15 @@ export default function AuthGate() {
             </button>
             <button
               type="button"
+              aria-current={activeArea === 'discord' ? 'page' : undefined}
+              onClick={() => setActiveArea('discord')}
+            >
+              <Bot size={15} aria-hidden="true" />
+              <span>Bot Discord</span>
+              {discordStatus?.linked && <span className="nav-status-dot" aria-label="Terhubung" />}
+            </button>
+            <button
+              type="button"
               aria-current={activeArea === 'grades' ? 'page' : undefined}
               onClick={() => setActiveArea('grades')}
             >
@@ -931,14 +941,22 @@ export default function AuthGate() {
           <header className="dashboard-header">
             <div className="min-w-0">
               <h1 className="dashboard-title">
-                {activeArea === 'timeline' ? 'Timeline Tugas' : activeArea === 'grades' ? 'Nilai Akademik' : 'Rencana Belajar'}
+                {activeArea === 'timeline'
+                  ? 'Timeline Tugas'
+                  : activeArea === 'discord'
+                    ? 'Bot Discord'
+                    : activeArea === 'grades'
+                      ? 'Nilai Akademik'
+                      : 'Rencana Belajar'}
               </h1>
               <p className="dashboard-subtitle">
                 {activeArea === 'timeline'
                   ? 'Data diambil langsung dari SCELE'
-                  : activeArea === 'grades'
-                    ? 'Grade tracker manual dengan perhitungan transparan'
-                    : 'Jadwal deterministik dari roadmap, deadline, dan preferensi kamu'}
+                  : activeArea === 'discord'
+                    ? 'Pengingat deadline harian jam 07:00 WIB & tanya tugas langsung dari Discord'
+                    : activeArea === 'grades'
+                      ? 'Grade tracker manual dengan perhitungan transparan'
+                      : 'Jadwal deterministik dari roadmap, deadline, dan preferensi kamu'}
               </p>
               {!panelStatus && <p className="mobile-sync-note">{idleSyncMessage}</p>}
             </div>
@@ -980,6 +998,14 @@ export default function AuthGate() {
             >
               <ListTodo size={14} aria-hidden="true" />
               Timeline
+            </button>
+            <button
+              type="button"
+              aria-current={activeArea === 'discord' ? 'page' : undefined}
+              onClick={() => setActiveArea('discord')}
+            >
+              <Bot size={14} aria-hidden="true" />
+              Discord
             </button>
             <button
               type="button"
@@ -1056,40 +1082,69 @@ export default function AuthGate() {
                 )}
               </div>
             ) : (
-              <>
-                <DashboardClient
-                  timeline={liveTimeline}
-                  selectedCourse={selectedCourse}
-                  completedIds={completedIds}
-                  onToggleDone={toggleDone}
-                />
-
-                <section className="discord-banner-card" aria-label="Bot Discord">
-                  <div className="discord-banner-copy">
-                    <div className="settings-discord-head">
-                      <h2 className="discord-banner-title">Bot Discord</h2>
-                      {discordStatus?.linked && <span className="badge badge-submitted">Terhubung</span>}
-                    </div>
-                    <p className="form-hint">
-                      Tanya deadline lewat <code>/today</code>, <code>/upcoming</code>, <code>/overdue</code>, <code>/summary</code>, atau atur pengingat harian jam 07:00 WIB lewat <code>/setchannel</code>.
-                    </p>
+              <DashboardClient
+                timeline={liveTimeline}
+                selectedCourse={selectedCourse}
+                completedIds={completedIds}
+                onToggleDone={toggleDone}
+              />
+            )
+          ) : activeArea === 'discord' ? (
+            <section className="discord-page" aria-label="Pengaturan Bot Discord">
+              <div className="discord-banner-card">
+                <div className="discord-banner-copy">
+                  <div className="settings-discord-head">
+                    <h2 className="discord-banner-title">Koneksi Akun Discord</h2>
+                    {discordStatus?.linked ? (
+                      <span className="badge badge-submitted">Terhubung</span>
+                    ) : (
+                      <span className="badge badge-not-submitted">Belum terhubung</span>
+                    )}
                   </div>
+                  <p className="form-hint">
+                    1. Klik <strong>Pilih Server Discord</strong> untuk mengundang bot ke server pribadimu.
+                    <br />
+                    2. Klik <strong>{discordStatus?.linked ? 'Buat kode baru' : 'Hubungkan Discord'}</strong> lalu jalankan perintah <code>/link</code> di Discord.
+                  </p>
+                </div>
 
-                  <div className="discord-banner-controls">
-                    <div className="settings-photo-actions">
-                      {discordStatus?.inviteUrl && (
-                        <a
-                          href={discordStatus.inviteUrl}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="ghost-action"
-                        >
-                          Pilih Server Discord
-                        </a>
-                      )}
+                <div className="discord-banner-controls">
+                  <div className="settings-photo-actions">
+                    {discordStatus?.inviteUrl && (
+                      <a
+                        href={discordStatus.inviteUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="ghost-action"
+                      >
+                        Pilih Server Discord
+                      </a>
+                    )}
+                    <button
+                      type="button"
+                      className="ghost-action"
+                      disabled={discordBusy}
+                      onClick={async () => {
+                        if (!user) return;
+                        setDiscordBusy(true);
+                        setDiscordError(null);
+                        try {
+                          const idToken = await user.getIdToken();
+                          const result = await createDiscordLinkCode(idToken);
+                          setDiscordCode(result.code);
+                        } catch (err) {
+                          setDiscordError(displayApiError(err, 'Gagal membuat kode Discord.'));
+                        } finally {
+                          setDiscordBusy(false);
+                        }
+                      }}
+                    >
+                      {discordBusy ? 'Memproses…' : discordStatus?.linked ? 'Buat kode baru' : 'Hubungkan Discord'}
+                    </button>
+                    {discordStatus?.linked && (
                       <button
                         type="button"
-                        className="ghost-action"
+                        className="profile-photo-remove"
                         disabled={discordBusy}
                         onClick={async () => {
                           if (!user) return;
@@ -1097,54 +1152,44 @@ export default function AuthGate() {
                           setDiscordError(null);
                           try {
                             const idToken = await user.getIdToken();
-                            const result = await createDiscordLinkCode(idToken);
-                            setDiscordCode(result.code);
+                            await unlinkDiscord(idToken);
+                            setDiscordStatus((prev) => (prev ? { ...prev, linked: false } : { configured: true, linked: false }));
+                            setDiscordCode(null);
                           } catch (err) {
-                            setDiscordError(displayApiError(err, 'Gagal membuat kode Discord.'));
+                            setDiscordError(displayApiError(err, 'Gagal memutuskan koneksi Discord.'));
                           } finally {
                             setDiscordBusy(false);
                           }
                         }}
                       >
-                        {discordBusy ? 'Memproses…' : discordStatus?.linked ? 'Buat kode baru' : 'Hubungkan Discord'}
+                        Putuskan
                       </button>
-                      {discordStatus?.linked && (
-                        <button
-                          type="button"
-                          className="profile-photo-remove"
-                          disabled={discordBusy}
-                          onClick={async () => {
-                            if (!user) return;
-                            setDiscordBusy(true);
-                            setDiscordError(null);
-                            try {
-                              const idToken = await user.getIdToken();
-                              await unlinkDiscord(idToken);
-                              setDiscordStatus((prev) => (prev ? { ...prev, linked: false } : { configured: true, linked: false }));
-                              setDiscordCode(null);
-                            } catch (err) {
-                              setDiscordError(displayApiError(err, 'Gagal memutuskan koneksi Discord.'));
-                            } finally {
-                              setDiscordBusy(false);
-                            }
-                          }}
-                        >
-                          Putuskan
-                        </button>
-                      )}
-                    </div>
-
-                    {discordCode && (
-                      <div className="discord-code-box">
-                        <span>Jalankan di Discord (berlaku 10 menit):</span>
-                        <code>/link code:{discordCode}</code>
-                      </div>
                     )}
-                    {discordError && <p className="form-error" role="alert">{discordError}</p>}
                   </div>
-                </section>
-              </>
-            )
+
+                  {discordCode && (
+                    <div className="discord-code-box">
+                      <span>Jalankan di Discord (berlaku 10 menit):</span>
+                      <code>/link code:{discordCode}</code>
+                    </div>
+                  )}
+                  {discordError && <p className="form-error" role="alert">{discordError}</p>}
+                </div>
+              </div>
+
+              <div className="discord-banner-card">
+                <div className="discord-banner-copy">
+                  <h2 className="discord-banner-title">Perintah Bot yang Tersedia</h2>
+                  <ul className="discord-command-list">
+                    <li><code>/today</code> — Lihat tugas yang jatuh tempo hari ini</li>
+                    <li><code>/upcoming</code> — Lihat daftar tugas mendatang</li>
+                    <li><code>/overdue</code> — Lihat tugas terlambat yang belum selesai</li>
+                    <li><code>/summary</code> — Ringkasan lengkap semua deadline aktif</li>
+                    <li><code>/setchannel</code> — Atur pengingat harian jam 07:00 WIB ke channel server ini atau DM pribadi</li>
+                  </ul>
+                </div>
+              </div>
+            </section>
           ) : activeArea === 'grades' ? (
             <GradeTracker user={user} activities={activityOptions} />
           ) : (
