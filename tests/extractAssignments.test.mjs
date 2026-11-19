@@ -129,3 +129,31 @@ test('peer-assessed workshops and deadline-bearing submission pages count as ass
     ]
   );
 });
+
+test('AUD-06: invalid calendar dates and out-of-range times are skipped safely without crashing buildTimeline', () => {
+  const html = `
+  <ul class="section">
+    <li class="activity assign modtype_assign" id="module-30"><div class="activityinstance">
+      <a href="https://scele.cs.ui.ac.id/mod/assign/view.php?id=30"><span class="instancename">Tugas Tanggal Rusak</span></a>
+      </div><div class="description">Deadline: 32-13-2026</div></li>
+    <li class="activity assign modtype_assign" id="module-31"><div class="activityinstance">
+      <a href="https://scele.cs.ui.ac.id/mod/assign/view.php?id=31"><span class="instancename">Tugas Jam Rusak</span></a>
+      </div><div data-region="activity-dates"><div><strong>Due:</strong> Friday, 31 February 2026, 25:99</div></div></li>
+    <li class="activity assign modtype_assign" id="module-32"><div class="activityinstance">
+      <a href="https://scele.cs.ui.ac.id/mod/assign/view.php?id=32"><span class="instancename">Tugas Valid</span></a>
+      </div><div data-region="activity-dates"><div><strong>Due:</strong> Friday, 8 May 2026, 23:59</div></div></li>
+  </ul>`;
+  const courseUrl = 'https://scele.cs.ui.ac.id/course/view.php?id=10';
+  const live = extractFromLiveHtml(html, 'Kursus', courseUrl);
+  const local = extractFromHtml(html, 'Kursus', courseUrl);
+
+  assert.deepEqual(local, live, 'local and live extractors must stay identical for invalid dates');
+  assert.deepEqual(
+    live.map(({ title, deadlineISO }) => ({ title, deadlineISO })),
+    [{ title: 'Tugas Valid', deadlineISO: '2026-05-08T23:59:00+07:00' }]
+  );
+
+  const timeline = buildLiveTimeline(live, { now: new Date('2026-05-01T00:00:00.000Z') });
+  assert.equal(timeline.upcoming.length, 1);
+  assert.equal(timeline.upcoming[0].title, 'Tugas Valid');
+});

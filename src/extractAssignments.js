@@ -59,6 +59,37 @@ const MONTHS_EN = {
 const DEADLINE_LABEL_RE = /^(?:due|deadline|closes?|batas\s+pengumpulan|dikumpulkan\s+paling\s+lambat)\s*:\s*/i;
 const DAY_PREFIX_RE = /^(?:sunday|monday|tuesday|wednesday|thursday|friday|saturday|minggu|senin|selasa|rabu|kamis|jumat|sabtu),\s*/i;
 
+function buildValidatedWibIso(yearRaw, monthRaw, dayRaw, hourRaw, minuteRaw) {
+  const year = Number(yearRaw);
+  const month = Number(monthRaw);
+  const day = Number(dayRaw);
+  const hour = Number(hourRaw);
+  const minute = Number(minuteRaw);
+  if (
+    !Number.isInteger(year) || year < 1970 || year > 2100 ||
+    !Number.isInteger(month) || month < 1 || month > 12 ||
+    !Number.isInteger(day) || day < 1 || day > 31 ||
+    !Number.isInteger(hour) || hour < 0 || hour > 23 ||
+    !Number.isInteger(minute) || minute < 0 || minute > 59
+  ) {
+    return null;
+  }
+  const calendar = new Date(Date.UTC(year, month - 1, day));
+  if (
+    calendar.getUTCFullYear() !== year ||
+    calendar.getUTCMonth() !== month - 1 ||
+    calendar.getUTCDate() !== day
+  ) {
+    return null;
+  }
+  const mm = String(month).padStart(2, '0');
+  const dd = String(day).padStart(2, '0');
+  const hh = String(hour).padStart(2, '0');
+  const min = String(minute).padStart(2, '0');
+  const iso = `${year}-${mm}-${dd}T${hh}:${min}:00+07:00`;
+  return Number.isFinite(new Date(iso).getTime()) ? iso : null;
+}
+
 function parseDeadline(text) {
   if (!text) return null;
   let s = DEADLINE_LABEL_RE.test(text) ? text.replace(DEADLINE_LABEL_RE, '') : text;
@@ -72,20 +103,19 @@ function parseDeadline(text) {
   if (!month) return null;
   let hour = parseInt(hourRaw, 10);
   if (ampm) {
+    if (hour < 1 || hour > 12) return null;
     const isPM = ampm.toUpperCase() === 'PM';
     if (isPM && hour !== 12) hour += 12;
     if (!isPM && hour === 12) hour = 0;
   }
-  const dd = day.padStart(2, '0');
-  const hh = String(hour).padStart(2, '0');
-  return `${year}-${month}-${dd}T${hh}:${minute}:00+07:00`;
+  return buildValidatedWibIso(year, month, day, hour, minute);
 }
 
 function parseNumericDateDeadline(text) {
   const match = (text || '').match(/\bdeadline\s*:\s*(\d{1,2})-(\d{1,2})-(\d{4})\b/i);
   if (!match) return null;
   const [, day, month, year] = match;
-  return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}T23:59:00+07:00`;
+  return buildValidatedWibIso(year, month, day, 23, 59);
 }
 
 function decodeHtmlEntities(text) {
@@ -213,7 +243,8 @@ function parseCalendarEventDate(dateText, url) {
   const datePart = parseCalendarTimeFromUrl(url);
   if (!dateMatch || !datePart) return null;
   const [, hour, minute] = dateMatch;
-  return `${datePart}T${hour.padStart(2, '0')}:${minute}:00+07:00`;
+  const [year, month, day] = datePart.split('-');
+  return buildValidatedWibIso(year, month, day, hour, minute);
 }
 
 function extractUpcomingQuizEvents(htmlContent, courseName, courseUrl) {
@@ -245,6 +276,10 @@ function buildItem({ block, title, url, courseName, courseUrl }) {
   const candidateText = cleanText([title, rawText, url].filter(Boolean).join(' '));
   const deadlineText = extractDeadlineText(rawDeadlineText);
   const deadlineISO = parseDeadline(deadlineText) || parseNumericDateDeadline(deadlineText);
+  if (deadlineText && !deadlineISO) {
+    console.warn(`[extractAssignments] Skipping task with invalid deadline "${deadlineText}" in "${courseName || 'unknown'}"`);
+    return null;
+  }
   const type = detectType({ text: candidateText, url, deadlineISO });
   if (!ACTIVITY_TYPES.has(type)) return null;
   const finalTitle = cleanTitle(
