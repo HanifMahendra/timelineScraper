@@ -238,6 +238,12 @@ export function GradebookForm({
           ditampilkan dalam 0.0–4.0.
         </p>
       )}
+      {initial?.gradingScale === 'percentage' && gradingScale === 'points' && (
+        <p className="grade-form-note">
+          Perubahan ke mode poin membutuhkan nilai maksimum (maxScore) pada setiap komponen yang
+          sudah memiliki nilai; lengkapi dulu jika ada komponen yang belum memiliki nilai maksimum.
+        </p>
+      )}
       {preview ? (
         <div className="grade-letter-preview" aria-label="Pratinjau batas huruf mutu">
           {preview.map(({ letter, min }) => (
