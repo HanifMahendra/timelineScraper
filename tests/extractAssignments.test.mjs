@@ -157,3 +157,43 @@ test('AUD-06: invalid calendar dates and out-of-range times are skipped safely w
   assert.equal(timeline.upcoming.length, 1);
   assert.equal(timeline.upcoming[0].title, 'Tugas Valid');
 });
+
+test('AUD-11: local buildTimeline converts UTC deadlineISO to WIB date boundary consistently with live backend', async () => {
+  const fs = await import('node:fs');
+  const path = await import('node:path');
+  const { buildTimeline: buildLocalTimeline } = require('../src/buildTimeline.js');
+
+  const dataDir = path.resolve(process.cwd(), 'data');
+  const assignmentsFile = path.join(dataDir, 'assignments.json');
+  const timelineFile = path.join(dataDir, 'timeline.json');
+  const hadAssignments = fs.existsSync(assignmentsFile);
+  const hadTimeline = fs.existsSync(timelineFile);
+  const prevAssignments = hadAssignments ? fs.readFileSync(assignmentsFile, 'utf8') : null;
+  const prevTimeline = hadTimeline ? fs.readFileSync(timelineFile, 'utf8') : null;
+
+  try {
+    fs.mkdirSync(dataDir, { recursive: true });
+    // 2026-05-07T18:00:00Z is 2026-05-08 01:00 WIB (same WIB calendar day as 2026-05-08 00:30 WIB).
+    const sample = [{
+      title: 'UTC Midnight Edge',
+      type: 'assignment',
+      course: 'Kursus',
+      deadlineText: null,
+      deadlineISO: '2026-05-07T18:00:00Z',
+      url: 'https://scele.cs.ui.ac.id/mod/assign/view.php?id=999',
+      rawText: '',
+    }];
+    fs.writeFileSync(assignmentsFile, JSON.stringify(sample), 'utf8');
+    const nowMs = new Date('2026-05-07T17:30:00Z').getTime(); // 2026-05-08 00:30 WIB
+    const localTimeline = buildLocalTimeline(nowMs);
+    const liveTimeline = buildLiveTimeline(sample, { now: nowMs });
+
+    assert.equal(localTimeline.today.length, 1);
+    assert.equal(liveTimeline.today.length, 1);
+  } finally {
+    if (hadAssignments) fs.writeFileSync(assignmentsFile, prevAssignments, 'utf8');
+    else fs.rmSync(assignmentsFile, { force: true });
+    if (hadTimeline) fs.writeFileSync(timelineFile, prevTimeline, 'utf8');
+    else fs.rmSync(timelineFile, { force: true });
+  }
+});

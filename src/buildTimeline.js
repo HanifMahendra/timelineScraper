@@ -44,7 +44,9 @@ function buildTimeline(nowOverride) {
     }
 
     const deadlineMs = new Date(item.deadlineISO).getTime();
-    const deadlineDateStr = item.deadlineISO.slice(0, 10); // "YYYY-MM-DD"
+    const deadlineDateStr = new Date(deadlineMs + WIB_OFFSET_MS)
+      .toISOString()
+      .slice(0, 10); // "YYYY-MM-DD" in WIB
 
     const isOverdue = deadlineMs < nowMs;
     const isDueToday = !isOverdue && deadlineDateStr === todayStr;
