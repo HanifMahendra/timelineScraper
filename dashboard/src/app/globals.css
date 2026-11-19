@@ -5770,10 +5770,35 @@
     color: var(--success);
   }
 
-  .settings-discord {
-    margin-top: 18px;
-    padding-top: 16px;
-    border-top: 1px solid var(--panel-border);
+  .discord-banner-card {
+    margin-top: 20px;
+    padding: 18px 20px;
+    border: 1px solid var(--panel-border);
+    border-radius: var(--radius-panel);
+    background: var(--card-background, var(--panel));
+    box-shadow: var(--panel-shadow);
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px 20px;
+  }
+
+  .discord-banner-copy {
+    flex: 1 1 280px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .discord-banner-title {
+    margin: 0;
+    font-size: 0.98rem;
+    font-weight: 700;
+    color: var(--text);
+  }
+
+  .discord-banner-controls {
     display: flex;
     flex-direction: column;
     gap: 10px;
@@ -5782,7 +5807,6 @@
   .settings-discord-head {
     display: flex;
     align-items: center;
-    justify-content: space-between;
     gap: 8px;
   }
 

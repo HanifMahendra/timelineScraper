@@ -25,11 +25,24 @@ semester berjalan tampil dalam satu tempat.
 **Timeline Tugas**
 - Mengambil tugas, kuis, worksheet, dan forum diskusi dari semua mata kuliah
   semester aktif secara otomatis.
-- Mengelompokkan tugas menjadi *terlambat*, *hari ini*, *minggu ini*, dan
-  *mendatang*. Status diperbarui sendiri seiring waktu berjalan.
-- Tugas bisa ditandai selesai, dan tandanya ikut tersimpan di akun sehingga
-  sama di semua perangkat.
+- Mendeteksi otomatis status pengumpulan tugas di SCELE (*Sudah dikumpulkan*,
+  *Draft*, atau *Belum dikumpulkan*) sehingga tugas yang sudah disubmit
+  otomatis dianggap selesai.
+- Mengelompokkan tugas menjadi *hari ini*, *mendatang*, *terlambat*, dan
+  *selesai* (collapsible), dengan kartu statistik interaktif serta status yang
+  diperbarui sendiri seiring waktu berjalan.
+- Tugas bisa ditandai selesai (dengan tombol *Urungkan*) dan tandanya ikut
+  tersimpan di akun sehingga sama di semua perangkat.
 - Aktivitas yang dibatasi untuk kelas lain tidak ikut ditampilkan.
+
+**Bot Discord (Multi-User)**
+- Setiap pengguna dapat menghubungkan akun Discord-nya langsung dari kartu
+  **Bot Discord** di bawah Timeline (pilih server via OAuth2 Discord lalu
+  jalankan `/link code:XXXXXX`).
+- Mendukung slash command interaktif: `/today`, `/upcoming`, `/overdue`, dan
+  `/summary` (balasan *ephemeral* khusus pengguna).
+- Pengingat harian otomatis setiap pukul 07:00 WIB ke DM pribadi atau channel
+  server pilihan sendiri lewat `/setchannel`.
 
 **Nilai Akademik**
 - Satu buku nilai per mata kuliah. Nilai yang sudah dirilis di SCELE diambil
@@ -68,6 +81,7 @@ Browser (dashboard)  ──►  Backend scraper  ──►  SCELE
 | Dashboard | Next.js (static export), React, TypeScript, Firebase Hosting |
 | Backend | Node.js, Express, Playwright, di Hugging Face Spaces (Docker) |
 | Data & autentikasi | Firebase Authentication, Cloud Firestore |
+| Bot & pengingat harian | Discord Interactions API (Ed25519), GitHub Actions |
 
 ## Struktur repository
 
