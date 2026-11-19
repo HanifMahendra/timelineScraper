@@ -28,7 +28,7 @@ import { getFirebaseAuth } from '@/lib/firebase';
 import { loginWithScele, logoutScele } from '@/lib/authApi';
 import { ScrapeApiError, triggerScrape, fetchUserTimeline } from '@/lib/timelineApi';
 import DashboardClient from '@/app/DashboardClient';
-import { isAncientOverdue, taskId } from '@/lib/timelineFilters';
+import { isAncientOverdue, isTaskCompleted, taskCompletionKeys, taskId } from '@/lib/timelineFilters';
 import type { Task, TimelineData } from '@/types/task';
 import GradeTracker from '@/features/grades/GradeTracker';
 import StudyPlanner from '@/features/study/StudyPlanner';
@@ -186,7 +186,7 @@ function getNearestTask(timeline: TimelineData, completedIds: Set<string>, selec
   const now = Date.now();
   return getAllTasks(timeline)
     .filter((task) => selectedCourse === 'all' || task.course === selectedCourse)
-    .filter((task) => task.deadlineISO && !completedIds.has(taskId(task)) && new Date(task.deadlineISO).getTime() >= now)
+    .filter((task) => task.deadlineISO && !isTaskCompleted(task, completedIds) && new Date(task.deadlineISO).getTime() >= now)
     .sort((a, b) => String(a.deadlineISO).localeCompare(String(b.deadlineISO)))[0];
 }
 
@@ -442,14 +442,21 @@ export default function AuthGate() {
     setError(message);
   }
 
-  function toggleDone(id: string) {
+  function toggleDone(task: Task) {
     if (!user) return;
     const currentUser = user;
-    const wasDone = completedIds.has(id);
-    const apply = (done: boolean) => {
+    const primaryId = taskId(task);
+    const allKeys = taskCompletionKeys(task);
+    const wasDone = isTaskCompleted(task, completedIds);
+    const previousPresentKeys = allKeys.filter((key) => completedIds.has(key));
+    const apply = (done: boolean, keysToRestore?: string[]) => {
       setCompletedIds((prev) => {
         const next = new Set(prev);
-        if (done) next.add(id); else next.delete(id);
+        if (done) {
+          for (const key of keysToRestore ?? [primaryId]) next.add(key);
+        } else {
+          for (const key of allKeys) next.delete(key);
+        }
         writeCompletedCache(currentUser.uid, next);
         return next;
       });
@@ -458,10 +465,13 @@ export default function AuthGate() {
     void (async () => {
       try {
         const idToken = await currentUser.getIdToken();
-        await updateCompletedTasks(idToken, wasDone ? { remove: [id] } : { add: [id] });
+        await updateCompletedTasks(
+          idToken,
+          wasDone ? { remove: allKeys } : { add: [primaryId] }
+        );
         setCompletionError(null);
       } catch {
-        apply(wasDone);
+        apply(wasDone, previousPresentKeys.length > 0 ? previousPresentKeys : [primaryId]);
         setCompletionError('Status tugas gagal disimpan. Periksa koneksi lalu coba lagi.');
       }
     })();

@@ -12,8 +12,24 @@ export function activeOverdue(tasks: Task[], nowMs = Date.now()): Task[] {
   return tasks.filter((task) => !isAncientOverdue(task, nowMs));
 }
 
-export function taskId(task: Task): string {
+export function legacyTaskId(task: Task): string {
   return task.url || task.title;
+}
+
+export function taskId(task: Task): string {
+  return task.activityId || legacyTaskId(task);
+}
+
+export function isTaskCompleted(task: Task, completedIds: ReadonlySet<string>): boolean {
+  if (completedIds.has(taskId(task))) return true;
+  const legacy = legacyTaskId(task);
+  return Boolean(legacy) && completedIds.has(legacy);
+}
+
+export function taskCompletionKeys(task: Task): string[] {
+  const primary = taskId(task);
+  const legacy = legacyTaskId(task);
+  return legacy && legacy !== primary ? [primary, legacy] : [primary];
 }
 
 export function calendarDayDiffWIB(deadlineISO: string, nowMs = Date.now()): number {

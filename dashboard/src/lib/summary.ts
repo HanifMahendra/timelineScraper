@@ -1,9 +1,9 @@
-import { activeOverdue, taskId } from '@/lib/timelineFilters';
+import { activeOverdue, isTaskCompleted } from '@/lib/timelineFilters';
 import type { Task, TimelineData } from '@/types/task';
 
 export function getWeeklySummary(timeline: TimelineData, completedIds = new Set<string>()): string {
   const { today, upcoming, overdue } = timeline;
-  const isCompleted = (task: Task) => completedIds.has(taskId(task));
+  const isCompleted = (task: Task) => isTaskCompleted(task, completedIds);
   const activeToday = today.filter((task) => !isCompleted(task));
   const activeUpcoming = upcoming.filter((task) => !isCompleted(task));
   const currentOverdue = activeOverdue(overdue).filter((task) => !isCompleted(task));

@@ -2,13 +2,13 @@
 
 import { Card, CardContent } from '@/components/ui/card';
 import { CalendarClock, Check, ExternalLink, RotateCcw } from 'lucide-react';
-import { calendarDayDiffWIB, taskId } from '@/lib/timelineFilters';
+import { calendarDayDiffWIB } from '@/lib/timelineFilters';
 import type { Task } from '@/types/task';
 
 interface Props {
   task: Task;
   completed?: boolean;
-  onToggleDone?: (taskId: string) => void;
+  onToggleDone?: (task: Task) => void;
 }
 
 const TYPE_CONFIG = {
@@ -128,8 +128,6 @@ export default function TaskCard({ task, completed = false, onToggleDone }: Prop
     Boolean(task.previousDeadlineISO) &&
     task.previousDeadlineISO !== task.deadlineISO;
 
-  const id = taskId(task);
-
   return (
     <Card
       className={`task-card task-card-${urgency} ${completed ? 'task-card-completed' : ''}`}
@@ -189,7 +187,7 @@ export default function TaskCard({ task, completed = false, onToggleDone }: Prop
           {onToggleDone && (
             <button
               type="button"
-              onClick={() => onToggleDone(id)}
+              onClick={() => onToggleDone(task)}
               className={`done-button ${completed ? 'done-button-cancel' : ''}`}
             >
               {completed ? <RotateCcw size={13} aria-hidden="true" /> : <Check size={13} aria-hidden="true" />}

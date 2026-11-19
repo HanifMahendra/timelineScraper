@@ -1,7 +1,7 @@
 'use client';
 
 import TaskCard from './TaskCard';
-import { taskId as getTaskId } from '@/lib/timelineFilters';
+import { isTaskCompleted, taskId as getTaskId } from '@/lib/timelineFilters';
 import type { Task } from '@/types/task';
 
 interface Props {
@@ -10,7 +10,7 @@ interface Props {
   tasks: Task[];
   emptyMessage: string;
   completedIds?: Set<string>;
-  onToggleDone?: (taskId: string) => void;
+  onToggleDone?: (task: Task) => void;
 }
 
 export default function TimelineSection({
@@ -41,9 +41,9 @@ export default function TimelineSection({
           {tasks.map((task, i) => {
             return (
               <TaskCard
-                key={`${task.url}-${i}`}
+                key={`${getTaskId(task)}-${i}`}
                 task={task}
-                completed={completedIds?.has(getTaskId(task)) ?? false}
+                completed={completedIds ? isTaskCompleted(task, completedIds) : false}
                 onToggleDone={onToggleDone}
               />
             );

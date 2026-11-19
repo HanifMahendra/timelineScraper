@@ -5,14 +5,14 @@ import StatsCards from '@/components/StatsCards';
 import Filters from '@/components/Filters';
 import TimelineSection from '@/components/TimelineSection';
 import { getWeeklySummary } from '@/lib/summary';
-import { isAncientOverdue, taskId } from '@/lib/timelineFilters';
+import { isAncientOverdue, isTaskCompleted } from '@/lib/timelineFilters';
 import type { FilterType, Task, TimelineData } from '@/types/task';
 
 interface Props {
   timeline: TimelineData;
   selectedCourse: string;
   completedIds: Set<string>;
-  onToggleDone: (taskId: string) => void;
+  onToggleDone: (task: Task) => void;
 }
 
 type SortType = 'deadline' | 'course' | 'type';
@@ -63,7 +63,7 @@ function sortTasks(tasks: Task[], sort: SortType): Task[] {
 function getNearestDeadline(tasks: Task[], completedIds: Set<string>): Task | null {
   const now = Date.now();
   return sortByDeadline(
-    tasks.filter((task) => task.deadlineISO && !completedIds.has(taskId(task)) && new Date(task.deadlineISO).getTime() >= now)
+    tasks.filter((task) => task.deadlineISO && !isTaskCompleted(task, completedIds) && new Date(task.deadlineISO).getTime() >= now)
   )[0] ?? null;
 }
 
@@ -120,7 +120,7 @@ export default function DashboardClient({ timeline, selectedCourse, completedIds
   const counts = useMemo<Record<FilterType, number>>(() => {
     const count = (f: FilterType) =>
       courseTasks.filter((t) => {
-        const completed = completedIds.has(taskId(t));
+        const completed = isTaskCompleted(t, completedIds);
         if ((f === 'overdue' || f === 'today') && completed) return false;
         return matchesFilter(t, f) && matchesSearch(t, search);
       }).length;
@@ -147,12 +147,12 @@ export default function DashboardClient({ timeline, selectedCourse, completedIds
   const useFlat = filter !== 'all' || search.length > 0;
 
   // Untuk mode 'all', pisahkan per bucket; tugas selesai hanya muncul di "Selesai".
-  const pending = filtered.filter((t) => !completedIds.has(taskId(t)));
+  const pending = filtered.filter((t) => !isTaskCompleted(t, completedIds));
   const todayFiltered = pending.filter((t) => t.isDueToday);
   const upcomingFiltered = pending.filter((t) => t.deadlineISO && !t.isOverdue && !t.isDueToday);
   const noDeadlineFiltered = pending.filter((t) => !t.deadlineISO);
   const overdueFiltered = pending.filter((t) => t.isOverdue);
-  const completedFiltered = filtered.filter((t) => completedIds.has(taskId(t)));
+  const completedFiltered = filtered.filter((t) => isTaskCompleted(t, completedIds));
   const summary = useMemo(
     () => getWeeklySummary(courseTimeline, completedIds),
     [courseTimeline, completedIds]
