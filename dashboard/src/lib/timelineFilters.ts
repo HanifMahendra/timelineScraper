@@ -20,7 +20,12 @@ export function taskId(task: Task): string {
   return task.activityId || legacyTaskId(task);
 }
 
+export function isSceleSubmitted(task: Task): boolean {
+  return task.submissionStatus === 'submitted';
+}
+
 export function isTaskCompleted(task: Task, completedIds: ReadonlySet<string>): boolean {
+  if (isSceleSubmitted(task)) return true;
   if (completedIds.has(taskId(task))) return true;
   const legacy = legacyTaskId(task);
   return Boolean(legacy) && completedIds.has(legacy);

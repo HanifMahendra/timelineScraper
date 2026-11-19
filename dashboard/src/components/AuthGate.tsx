@@ -4,7 +4,6 @@ import { ChangeEvent, FormEvent, useCallback, useEffect, useMemo, useRef, useSta
 import {
   BookOpenCheck,
   BrainCircuit,
-  CalendarClock,
   CalendarDays,
   Check,
   ChevronRight,
@@ -16,6 +15,7 @@ import {
   LogOut,
   RefreshCw,
   Trash2,
+  X,
 } from 'lucide-react';
 import {
   browserLocalPersistence,
@@ -36,6 +36,7 @@ import GradeTracker from '@/features/grades/GradeTracker';
 import StudyPlanner from '@/features/study/StudyPlanner';
 import { AUTH_EXPIRED_EVENT, SafeApiError, displayApiError } from '@/lib/apiErrors';
 import { fetchCompletedTasks, updateCompletedTasks } from '@/lib/taskStateApi';
+import { createDiscordLinkCode, fetchDiscordStatus, unlinkDiscord, type DiscordStatus } from '@/lib/discordApi';
 import { formatSyncAge, isSyncStale, rebucketTimeline } from '@/lib/timelineStatus';
 import ThemeSwitcher from '@/components/ThemeSwitcher';
 
@@ -184,25 +185,6 @@ function getAllTasks(timeline: TimelineData): Task[] {
   return [...timeline.today, ...timeline.upcoming, ...timeline.overdue].filter((task) => !isAncientOverdue(task));
 }
 
-function getNearestTask(timeline: TimelineData, completedIds: Set<string>, selectedCourse: string) {
-  const now = Date.now();
-  return getAllTasks(timeline)
-    .filter((task) => selectedCourse === 'all' || task.course === selectedCourse)
-    .filter((task) => task.deadlineISO && !isTaskCompleted(task, completedIds) && new Date(task.deadlineISO).getTime() >= now)
-    .sort((a, b) => String(a.deadlineISO).localeCompare(String(b.deadlineISO)))[0];
-}
-
-function getRelativeDeadline(task: Task): string {
-  if (!task.deadlineISO) return '';
-  const diffMs = new Date(task.deadlineISO).getTime() - Date.now();
-  const diffHours = Math.ceil(diffMs / (1000 * 60 * 60));
-  if (diffHours <= 1) return 'kurang dari 1 jam lagi';
-  if (diffHours < 24) return `${diffHours} jam lagi`;
-  const diffDays = Math.ceil(diffHours / 24);
-  if (diffDays === 1) return 'besok';
-  return `${diffDays} hari lagi`;
-}
-
 const LOGIN_STEPS = ['Menghubungkan ke server', 'Masuk ke akun SCELE', 'Menyiapkan dashboard'] as const;
 // The backend reports no progress; the first step follows typical timings
 // and the last one starts only once SCELE login has actually succeeded.
@@ -262,11 +244,88 @@ export default function AuthGate() {
   const [profile, setProfile] = useState<LocalProfile>({ name: '', photo: '' });
   const [profileError, setProfileError] = useState<string | null>(null);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [logoutConfirmOpen, setLogoutConfirmOpen] = useState(false);
+  const [discordStatus, setDiscordStatus] = useState<DiscordStatus | null>(null);
+  const [discordCode, setDiscordCode] = useState<string | null>(null);
+  const [discordBusy, setDiscordBusy] = useState(false);
+  const [discordError, setDiscordError] = useState<string | null>(null);
   const [showPassword, setShowPassword] = useState(false);
+  const [undoToast, setUndoToast] = useState<{ task: Task; markedDone: boolean; text: string } | null>(null);
+  const [toastAnnouncement, setToastAnnouncement] = useState('');
   const [activeArea, setActiveArea] = useState<'timeline' | 'grades' | 'study'>('timeline');
   const [nowMs, setNowMs] = useState(() => Date.now());
   const userRef = useRef<User | null>(null);
   const settingsDialogRef = useRef<HTMLDialogElement | null>(null);
+  const logoutDialogRef = useRef<HTMLDialogElement | null>(null);
+  const undoToastRef = useRef<HTMLDivElement | null>(null);
+  const toastTimerRef = useRef<number | null>(null);
+  const toastFocusedRef = useRef(false);
+
+  const dismissUndoToast = useCallback(() => {
+    if (toastTimerRef.current !== null) {
+      window.clearTimeout(toastTimerRef.current);
+      toastTimerRef.current = null;
+    }
+    const toastEl = undoToastRef.current;
+    if (toastEl && typeof toastEl.hidePopover === 'function') {
+      try {
+        toastEl.hidePopover();
+      } catch {
+        // Ignore if already closed.
+      }
+    }
+    setUndoToast(null);
+  }, []);
+
+  const scheduleToastDismiss = useCallback(() => {
+    if (toastTimerRef.current !== null) window.clearTimeout(toastTimerRef.current);
+    toastTimerRef.current = window.setTimeout(() => {
+      if (toastFocusedRef.current) return;
+      dismissUndoToast();
+    }, 5_000);
+  }, [dismissUndoToast]);
+
+  useEffect(() => {
+    if (settingsOpen || logoutConfirmOpen) {
+      dismissUndoToast();
+    }
+  }, [settingsOpen, logoutConfirmOpen, dismissUndoToast]);
+
+  useEffect(() => {
+    const toastEl = undoToastRef.current;
+    if (!undoToast || !toastEl) return;
+    if (typeof toastEl.showPopover === 'function') {
+      try {
+        if (!toastEl.matches(':popover-open')) toastEl.showPopover();
+      } catch {
+        // Fallback when Popover API is unavailable.
+      }
+    }
+    const docWithNotify = document as Document & { ariaNotify?: (text: string) => void };
+    const announcement = `${undoToast.text}. Actions available`;
+    if (typeof docWithNotify.ariaNotify === 'function') {
+      docWithNotify.ariaNotify(announcement);
+    } else {
+      setToastAnnouncement(announcement);
+    }
+    scheduleToastDismiss();
+    return () => {
+      if (toastTimerRef.current !== null) {
+        window.clearTimeout(toastTimerRef.current);
+        toastTimerRef.current = null;
+      }
+    };
+  }, [undoToast, scheduleToastDismiss]);
+
+  useEffect(() => {
+    const dialog = logoutDialogRef.current;
+    if (!dialog) return;
+    if (logoutConfirmOpen && !dialog.open) {
+      dialog.showModal();
+    } else if (!logoutConfirmOpen && dialog.open) {
+      dialog.close();
+    }
+  }, [logoutConfirmOpen]);
 
   useEffect(() => {
     const dialog = settingsDialogRef.current;
@@ -277,6 +336,22 @@ export default function AuthGate() {
       dialog.close();
     }
   }, [settingsOpen]);
+
+  useEffect(() => {
+    if (!settingsOpen || !user) return;
+    let active = true;
+    setDiscordError(null);
+    void (async () => {
+      try {
+        const idToken = await user.getIdToken();
+        const status = await fetchDiscordStatus(idToken);
+        if (active) setDiscordStatus(status);
+      } catch {
+        if (active) setDiscordStatus(null);
+      }
+    })();
+    return () => { active = false; };
+  }, [settingsOpen, user]);
 
   // Progressive enhancement fallback for browsers without native <dialog closedby="any"> (Safari).
   useEffect(() => {
@@ -491,7 +566,7 @@ export default function AuthGate() {
     setError(message);
   }
 
-  function toggleDone(task: Task) {
+  function toggleDone(task: Task, { showToast = true }: { showToast?: boolean } = {}) {
     if (!user) return;
     const currentUser = user;
     const primaryId = taskId(task);
@@ -511,6 +586,13 @@ export default function AuthGate() {
       });
     };
     apply(!wasDone);
+    if (showToast && !settingsOpen && !logoutConfirmOpen) {
+      setUndoToast({
+        task,
+        markedDone: !wasDone,
+        text: !wasDone ? `"${task.title}" ditandai selesai` : `Status selesai "${task.title}" dibatalkan`,
+      });
+    }
     void (async () => {
       try {
         const idToken = await currentUser.getIdToken();
@@ -718,7 +800,6 @@ export default function AuthGate() {
   const courses = [...new Set(allTasks.map((task) => task.course))].sort((a, b) => a.localeCompare(b));
   const courseCounts = new Map<string, number>();
   for (const task of allTasks) courseCounts.set(task.course, (courseCounts.get(task.course) ?? 0) + 1);
-  const nearestTask = getNearestTask(liveTimeline, completedIds, selectedCourse);
   const activityOptions = [
     ...new Map(
       allTasks.flatMap((task) =>
@@ -777,7 +858,7 @@ export default function AuthGate() {
           <nav className="sidebar-navigation" aria-label="Area dashboard">
             <button
               type="button"
-              aria-pressed={activeArea === 'timeline'}
+              aria-current={activeArea === 'timeline' ? 'page' : undefined}
               onClick={() => setActiveArea('timeline')}
             >
               <ListTodo size={15} aria-hidden="true" />
@@ -785,7 +866,7 @@ export default function AuthGate() {
             </button>
             <button
               type="button"
-              aria-pressed={activeArea === 'grades'}
+              aria-current={activeArea === 'grades' ? 'page' : undefined}
               onClick={() => setActiveArea('grades')}
             >
               <BookOpenCheck size={15} aria-hidden="true" />
@@ -793,7 +874,7 @@ export default function AuthGate() {
             </button>
             <button
               type="button"
-              aria-pressed={activeArea === 'study'}
+              aria-current={activeArea === 'study' ? 'page' : undefined}
               onClick={() => setActiveArea('study')}
             >
               <BrainCircuit size={15} aria-hidden="true" />
@@ -804,13 +885,8 @@ export default function AuthGate() {
           <div className={`sync-panel sync-status-${panelStatus?.tone ?? 'idle'}`} aria-live="polite">
             <div className="sync-panel-top">
               <span>Sinkronisasi</span>
-              {reloginNeeded ? (
-                <button onClick={relogin}>Masuk ulang</button>
-              ) : (
-                <button onClick={() => handleScrape(user)} disabled={scraping}>
-                  <RefreshCw size={13} className={scraping ? 'animate-spin' : ''} />
-                  {scraping ? 'Berjalan' : 'Sinkron'}
-                </button>
+              {reloginNeeded && (
+                <button type="button" onClick={relogin}>Masuk ulang</button>
               )}
             </div>
             <p>
@@ -819,19 +895,6 @@ export default function AuthGate() {
             </p>
             {scraping && <div className="sync-progress" aria-hidden="true"><span /></div>}
           </div>
-
-          {activeArea === 'timeline' && <div className="sidebar-deadline">
-            <div className="sidebar-deadline-top">
-              <CalendarClock size={14} aria-hidden="true" />
-              <span>Deadline terdekat</span>
-            </div>
-            <p>{nearestTask?.title ?? 'Belum ada deadline aktif.'}</p>
-            {nearestTask && (
-              <small>
-                {nearestTask.course} · {getRelativeDeadline(nearestTask)}
-              </small>
-            )}
-          </div>}
 
           {activeArea === 'timeline' && <div className="sidebar-courses">
             <div className="sidebar-courses-title">Filter kelas</div>
@@ -860,7 +923,7 @@ export default function AuthGate() {
 
         </aside>
 
-        <section className="dashboard-main">
+        <main className="dashboard-main">
           <header className="dashboard-header">
             <div className="min-w-0">
               <h1 className="dashboard-title">
@@ -894,12 +957,12 @@ export default function AuthGate() {
 
             <div className="dashboard-actions">
               <ThemeSwitcher />
-              <button onClick={() => handleScrape(user)} disabled={scraping} className="ghost-action">
-                <RefreshCw size={15} className={scraping ? 'animate-spin' : ''} />
+              <button type="button" onClick={() => handleScrape(user)} disabled={scraping} className="ghost-action">
+                <RefreshCw size={15} className={scraping ? 'animate-spin' : ''} aria-hidden="true" />
                 {scraping ? 'Menyinkronkan' : 'Sinkronkan'}
               </button>
-              <button onClick={() => handleLogout()} className="ghost-action ghost-action-danger">
-                <LogOut size={15} />
+              <button type="button" onClick={() => setLogoutConfirmOpen(true)} className="ghost-action ghost-action-danger">
+                <LogOut size={15} aria-hidden="true" />
                 Logout
               </button>
             </div>
@@ -908,7 +971,7 @@ export default function AuthGate() {
           <nav className="mobile-area-navigation" aria-label="Area dashboard">
             <button
               type="button"
-              aria-pressed={activeArea === 'timeline'}
+              aria-current={activeArea === 'timeline' ? 'page' : undefined}
               onClick={() => setActiveArea('timeline')}
             >
               <ListTodo size={14} aria-hidden="true" />
@@ -916,7 +979,7 @@ export default function AuthGate() {
             </button>
             <button
               type="button"
-              aria-pressed={activeArea === 'grades'}
+              aria-current={activeArea === 'grades' ? 'page' : undefined}
               onClick={() => setActiveArea('grades')}
             >
               <BookOpenCheck size={14} aria-hidden="true" />
@@ -924,7 +987,7 @@ export default function AuthGate() {
             </button>
             <button
               type="button"
-              aria-pressed={activeArea === 'study'}
+              aria-current={activeArea === 'study' ? 'page' : undefined}
               onClick={() => setActiveArea('study')}
             >
               <BrainCircuit size={14} aria-hidden="true" />
@@ -1001,7 +1064,98 @@ export default function AuthGate() {
           ) : (
             <StudyPlanner user={user} activities={activityOptions} />
           )}
-        </section>
+        </main>
+      </div>
+
+      <dialog
+        ref={logoutDialogRef}
+        className="settings-modal confirm-dialog"
+        aria-labelledby="logout-confirm-title"
+        onClose={() => setLogoutConfirmOpen(false)}
+      >
+        <div className="settings-modal-header">
+          <div>
+            <p className="brand-kicker">Konfirmasi</p>
+            <h2 id="logout-confirm-title" className="panel-title">Keluar dari Scheduler?</h2>
+          </div>
+        </div>
+        <p className="confirm-dialog-copy">
+          Kamu perlu memasukkan akun SCELE lagi untuk menyinkronkan tugas berikutnya.
+        </p>
+        <div className="confirm-dialog-actions">
+          <button
+            type="button"
+            className="ghost-action"
+            autoFocus
+            onClick={() => logoutDialogRef.current?.close()}
+          >
+            Batal
+          </button>
+          <button
+            type="button"
+            className="ghost-action ghost-action-danger"
+            onClick={() => {
+              logoutDialogRef.current?.close();
+              void handleLogout();
+            }}
+          >
+            <LogOut size={15} aria-hidden="true" />
+            Keluar
+          </button>
+        </div>
+      </dialog>
+
+      <div role="region" aria-label="Notifikasi" className="toast-region">
+        <p className="sr-only">Pengumuman notifikasi</p>
+        <div aria-live="polite" className="sr-only">{toastAnnouncement}</div>
+        <div
+          id="undo-toast"
+          ref={undoToastRef}
+          popover="manual"
+          className="undo-toast"
+          onFocusCapture={() => {
+            toastFocusedRef.current = true;
+            if (toastTimerRef.current !== null) {
+              window.clearTimeout(toastTimerRef.current);
+              toastTimerRef.current = null;
+            }
+          }}
+          onBlurCapture={(event) => {
+            if (!event.currentTarget.contains(event.relatedTarget as Node | null)) {
+              toastFocusedRef.current = false;
+              if (undoToast) scheduleToastDismiss();
+            }
+          }}
+        >
+          {undoToast && (
+            <>
+              <span className="undo-toast-text">{undoToast.text}</span>
+              <div className="undo-toast-actions">
+                <button
+                  type="button"
+                  className="undo-toast-action"
+                  onClick={() => {
+                    const targetTask = undoToast.task;
+                    dismissUndoToast();
+                    toggleDone(targetTask, { showToast: false });
+                  }}
+                >
+                  Urungkan
+                </button>
+                <button
+                  type="button"
+                  className="undo-toast-close"
+                  popoverTarget="undo-toast"
+                  popoverTargetAction="hide"
+                  onClick={dismissUndoToast}
+                  aria-label="Tutup notifikasi"
+                >
+                  <X size={14} aria-hidden="true" />
+                </button>
+              </div>
+            </>
+          )}
+        </div>
       </div>
 
       <dialog
@@ -1082,6 +1236,80 @@ export default function AuthGate() {
         </div>
 
         {profileError && <p className="form-error" role="alert">{profileError}</p>}
+
+        <div className="settings-discord">
+          <div className="settings-discord-head">
+            <span className="settings-photo-label">Bot Discord</span>
+            {discordStatus?.linked && <span className="badge badge-submitted">Terhubung</span>}
+          </div>
+          <p className="form-hint">
+            Tanya tugas lewat <code>/today</code>, <code>/upcoming</code>, <code>/overdue</code>, <code>/summary</code> dan atur tujuan pengingat harian lewat <code>/setchannel</code> (DM atau channel server).
+          </p>
+          <div className="settings-photo-actions">
+            {discordStatus?.inviteUrl && (
+              <a
+                href={discordStatus.inviteUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="ghost-action"
+              >
+                Pilih Server Discord
+              </a>
+            )}
+            <button
+              type="button"
+              className="ghost-action"
+              disabled={discordBusy}
+              onClick={async () => {
+                if (!user) return;
+                setDiscordBusy(true);
+                setDiscordError(null);
+                try {
+                  const idToken = await user.getIdToken();
+                  const result = await createDiscordLinkCode(idToken);
+                  setDiscordCode(result.code);
+                } catch (err) {
+                  setDiscordError(displayApiError(err, 'Gagal membuat kode Discord.'));
+                } finally {
+                  setDiscordBusy(false);
+                }
+              }}
+            >
+              {discordBusy ? 'Memproses…' : discordStatus?.linked ? 'Buat kode baru' : 'Hubungkan Discord'}
+            </button>
+            {discordStatus?.linked && (
+              <button
+                type="button"
+                className="profile-photo-remove"
+                disabled={discordBusy}
+                onClick={async () => {
+                  if (!user) return;
+                  setDiscordBusy(true);
+                  setDiscordError(null);
+                  try {
+                    const idToken = await user.getIdToken();
+                    await unlinkDiscord(idToken);
+                    setDiscordStatus((prev) => (prev ? { ...prev, linked: false } : { configured: true, linked: false }));
+                    setDiscordCode(null);
+                  } catch (err) {
+                    setDiscordError(displayApiError(err, 'Gagal memutuskan koneksi Discord.'));
+                  } finally {
+                    setDiscordBusy(false);
+                  }
+                }}
+              >
+                Putuskan
+              </button>
+            )}
+          </div>
+          {discordCode && (
+            <div className="discord-code-box">
+              <span>Jalankan di Discord (berlaku 10 menit):</span>
+              <code>/link code:{discordCode}</code>
+            </div>
+          )}
+          {discordError && <p className="form-error" role="alert">{discordError}</p>}
+        </div>
       </dialog>
     </div>
   );
