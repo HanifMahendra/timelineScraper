@@ -37,7 +37,7 @@ import GradeTracker from '@/features/grades/GradeTracker';
 import StudyPlanner from '@/features/study/StudyPlanner';
 import { AUTH_EXPIRED_EVENT, SafeApiError, displayApiError } from '@/lib/apiErrors';
 import { fetchCompletedTasks, updateCompletedTasks } from '@/lib/taskStateApi';
-import { createDiscordLinkCode, fetchDiscordStatus, unlinkDiscord, type DiscordStatus } from '@/lib/discordApi';
+import { createDiscordLinkCode, fetchDiscordStatus, unlinkDiscord, updateDiscordPreferences, type DiscordStatus } from '@/lib/discordApi';
 import { formatSyncAge, isSyncStale, rebucketTimeline } from '@/lib/timelineStatus';
 import ThemeSwitcher from '@/components/ThemeSwitcher';
 
@@ -250,6 +250,7 @@ export default function AuthGate() {
   const [discordCode, setDiscordCode] = useState<string | null>(null);
   const [discordBusy, setDiscordBusy] = useState(false);
   const [discordError, setDiscordError] = useState<string | null>(null);
+  const [discordSavedMsg, setDiscordSavedMsg] = useState<string | null>(null);
   const [showPassword, setShowPassword] = useState(false);
   const [undoToast, setUndoToast] = useState<{ task: Task; markedDone: boolean; text: string } | null>(null);
   const [toastAnnouncement, setToastAnnouncement] = useState('');
@@ -1177,6 +1178,81 @@ export default function AuthGate() {
                 </div>
               </div>
 
+              {discordStatus?.linked && (
+                <div className="discord-banner-card">
+                  <div className="discord-banner-copy">
+                    <h2 className="discord-banner-title">Jadwal Pengingat Harian</h2>
+                    <p className="form-hint">
+                      Pilih jam pengiriman ringkasan deadline harian dalam WIB. Kamu juga bisa mengubah tujuan kirim (DM atau channel server) dengan perintah <code>/setchannel</code> di Discord.
+                    </p>
+                  </div>
+
+                  <div className="discord-pref-controls">
+                    <label className="remember-row">
+                      <input
+                        type="checkbox"
+                        checked={discordStatus.reminderEnabled !== false}
+                        disabled={discordBusy}
+                        onChange={async (event) => {
+                          if (!user) return;
+                          const nextEnabled = event.target.checked;
+                          setDiscordBusy(true);
+                          setDiscordError(null);
+                          setDiscordSavedMsg(null);
+                          try {
+                            const idToken = await user.getIdToken();
+                            const res = await updateDiscordPreferences(idToken, { reminderEnabled: nextEnabled });
+                            setDiscordStatus((prev) => (prev ? { ...prev, ...res } : prev));
+                            setDiscordSavedMsg(nextEnabled ? 'Pengingat harian diaktifkan.' : 'Pengingat harian dinonaktifkan.');
+                          } catch (err) {
+                            setDiscordError(displayApiError(err, 'Gagal menyimpan pengaturan pengingat.'));
+                          } finally {
+                            setDiscordBusy(false);
+                          }
+                        }}
+                      />
+                      <span>Aktifkan pengingat harian</span>
+                    </label>
+
+                    <label className="discord-hour-field" htmlFor="discord-reminder-hour">
+                      <span>Jam kirim (WIB)</span>
+                      <select
+                        id="discord-reminder-hour"
+                        name="discordReminderHour"
+                        className="themed-select"
+                        value={discordStatus.reminderHourWib ?? 7}
+                        disabled={discordBusy || discordStatus.reminderEnabled === false}
+                        onChange={async (event) => {
+                          if (!user) return;
+                          const nextHour = Number(event.target.value);
+                          setDiscordBusy(true);
+                          setDiscordError(null);
+                          setDiscordSavedMsg(null);
+                          try {
+                            const idToken = await user.getIdToken();
+                            const res = await updateDiscordPreferences(idToken, { reminderHourWib: nextHour });
+                            setDiscordStatus((prev) => (prev ? { ...prev, ...res } : prev));
+                            setDiscordSavedMsg(`Pengingat harian diatur ke ${String(nextHour).padStart(2, '0')}:00 WIB.`);
+                          } catch (err) {
+                            setDiscordError(displayApiError(err, 'Gagal menyimpan jam pengingat.'));
+                          } finally {
+                            setDiscordBusy(false);
+                          }
+                        }}
+                      >
+                        {Array.from({ length: 24 }, (_, hour) => (
+                          <option key={hour} value={hour}>
+                            {String(hour).padStart(2, '0')}:00 WIB
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+
+                    {discordSavedMsg && <small className="form-hint discord-saved-msg">{discordSavedMsg}</small>}
+                  </div>
+                </div>
+              )}
+
               <div className="discord-banner-card">
                 <div className="discord-banner-copy">
                   <h2 className="discord-banner-title">Perintah Bot yang Tersedia</h2>
@@ -1185,7 +1261,7 @@ export default function AuthGate() {
                     <li><code>/upcoming</code> — Lihat daftar tugas mendatang</li>
                     <li><code>/overdue</code> — Lihat tugas terlambat yang belum selesai</li>
                     <li><code>/summary</code> — Ringkasan lengkap semua deadline aktif</li>
-                    <li><code>/setchannel</code> — Atur pengingat harian jam 07:00 WIB ke channel server ini atau DM pribadi</li>
+                    <li><code>/setchannel</code> — Atur pengingat harian ke channel server ini atau DM pribadi</li>
                   </ul>
                 </div>
               </div>

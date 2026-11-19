@@ -9,6 +9,8 @@ export interface DiscordStatus {
   discordUserId?: string;
   linkedAt?: string | null;
   deliveryTarget?: 'dm' | 'channel';
+  reminderHourWib?: number;
+  reminderEnabled?: boolean;
 }
 
 export interface DiscordLinkCode {
@@ -47,4 +49,14 @@ export function createDiscordLinkCode(idToken: string): Promise<DiscordLinkCode>
 
 export function unlinkDiscord(idToken: string): Promise<{ linked: false }> {
   return discordRequest<{ linked: false }>('/link', idToken, { method: 'DELETE' });
+}
+
+export function updateDiscordPreferences(
+  idToken: string,
+  prefs: { reminderHourWib?: number; reminderEnabled?: boolean }
+): Promise<{ linked: true; reminderHourWib: number; reminderEnabled: boolean }> {
+  return discordRequest('/preferences', idToken, {
+    method: 'PATCH',
+    body: JSON.stringify(prefs),
+  });
 }

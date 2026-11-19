@@ -5805,6 +5805,25 @@
     background: var(--success);
   }
 
+  .discord-pref-controls {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    min-width: 220px;
+  }
+
+  .discord-hour-field {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    font-size: 0.82rem;
+    color: var(--text-soft);
+  }
+
+  .discord-saved-msg {
+    color: var(--success);
+  }
+
   .discord-banner-copy {
     flex: 1 1 280px;
     display: flex;

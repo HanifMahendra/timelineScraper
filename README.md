@@ -41,8 +41,8 @@ semester berjalan tampil dalam satu tempat.
   `/link code:XXXXXX`).
 - Mendukung slash command interaktif: `/today`, `/upcoming`, `/overdue`, dan
   `/summary` (balasan *ephemeral* khusus pengguna).
-- Pengingat harian otomatis setiap pukul 07:00 WIB ke DM pribadi atau channel
-  server pilihan sendiri lewat `/setchannel`.
+- Pengingat harian otomatis di jam pilihan pengguna (WIB) ke DM pribadi atau
+  channel server pilihan sendiri lewat `/setchannel`.
 
 **Nilai Akademik**
 - Satu buku nilai per mata kuliah. Nilai yang sudah dirilis di SCELE diambil

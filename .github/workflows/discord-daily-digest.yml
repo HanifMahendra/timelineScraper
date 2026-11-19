@@ -2,8 +2,8 @@ name: Discord Daily Digest
 
 on:
   schedule:
-    # 00:00 UTC = 07:00 WIB every day
-    - cron: '0 0 * * *'
+    # Run every hour on the hour so each user receives their digest at their chosen WIB hour
+    - cron: '0 * * * *'
   workflow_dispatch:
 
 jobs:
