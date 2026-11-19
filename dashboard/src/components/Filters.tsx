@@ -39,9 +39,13 @@ export default function Filters({
         <div className="relative">
           <Search className="filter-search-icon" size={16} aria-hidden="true" />
           <Input
+            type="search"
+            name="task-search"
             value={search}
             onChange={(e) => onSearchChange(e.target.value)}
             placeholder="Cari tugas atau mata kuliah..."
+            aria-label="Cari tugas atau mata kuliah"
+            enterKeyHint="search"
             className="themed-input pl-9"
           />
         </div>

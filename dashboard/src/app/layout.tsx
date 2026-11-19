@@ -19,14 +19,17 @@ export const metadata: Metadata = {
 
 const themeInitScript = `
 try {
-  var storedTheme = localStorage.getItem('my-timeline-theme');
-  var theme = storedTheme === 'light' || storedTheme === 'dark'
-    ? storedTheme
-    : (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
-  document.documentElement.dataset.theme = theme;
-  document.documentElement.classList.toggle('dark', theme === 'dark');
+  var stored = localStorage.getItem('my-timeline-theme');
+  var override = stored === 'light' || stored === 'dark' ? stored : null;
+  var meta = document.querySelector('meta[name="color-scheme"]');
+  if (meta) meta.content = override || 'light dark';
+  var resolved = override || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+  document.documentElement.dataset.theme = resolved;
+  document.documentElement.classList.toggle('dark', resolved === 'dark');
 } catch (_) {
-  document.documentElement.dataset.theme = 'light';
+  var fallback = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+  document.documentElement.dataset.theme = fallback;
+  document.documentElement.classList.toggle('dark', fallback === 'dark');
 }
 `;
 
@@ -38,11 +41,11 @@ export default function RootLayout({
   return (
     <html
       lang="id"
-      data-theme="light"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
       suppressHydrationWarning
     >
       <head>
+        <meta name="color-scheme" content="light dark" />
         <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
       </head>
       <body className="min-h-full flex flex-col">{children}</body>
