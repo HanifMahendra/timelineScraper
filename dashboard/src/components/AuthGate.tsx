@@ -338,7 +338,11 @@ export default function AuthGate() {
   }, [settingsOpen]);
 
   useEffect(() => {
-    if (!settingsOpen || !user) return;
+    if (!user) {
+      setDiscordStatus(null);
+      setDiscordCode(null);
+      return;
+    }
     let active = true;
     setDiscordError(null);
     void (async () => {
@@ -351,7 +355,7 @@ export default function AuthGate() {
       }
     })();
     return () => { active = false; };
-  }, [settingsOpen, user]);
+  }, [user]);
 
   // Progressive enhancement fallback for browsers without native <dialog closedby="any"> (Safari).
   useEffect(() => {
@@ -1052,12 +1056,94 @@ export default function AuthGate() {
                 )}
               </div>
             ) : (
-              <DashboardClient
-                timeline={liveTimeline}
-                selectedCourse={selectedCourse}
-                completedIds={completedIds}
-                onToggleDone={toggleDone}
-              />
+              <>
+                <DashboardClient
+                  timeline={liveTimeline}
+                  selectedCourse={selectedCourse}
+                  completedIds={completedIds}
+                  onToggleDone={toggleDone}
+                />
+
+                <section className="discord-banner-card" aria-label="Bot Discord">
+                  <div className="discord-banner-copy">
+                    <div className="settings-discord-head">
+                      <h2 className="discord-banner-title">Bot Discord</h2>
+                      {discordStatus?.linked && <span className="badge badge-submitted">Terhubung</span>}
+                    </div>
+                    <p className="form-hint">
+                      Tanya deadline lewat <code>/today</code>, <code>/upcoming</code>, <code>/overdue</code>, <code>/summary</code>, atau atur pengingat harian jam 07:00 WIB lewat <code>/setchannel</code>.
+                    </p>
+                  </div>
+
+                  <div className="discord-banner-controls">
+                    <div className="settings-photo-actions">
+                      {discordStatus?.inviteUrl && (
+                        <a
+                          href={discordStatus.inviteUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="ghost-action"
+                        >
+                          Pilih Server Discord
+                        </a>
+                      )}
+                      <button
+                        type="button"
+                        className="ghost-action"
+                        disabled={discordBusy}
+                        onClick={async () => {
+                          if (!user) return;
+                          setDiscordBusy(true);
+                          setDiscordError(null);
+                          try {
+                            const idToken = await user.getIdToken();
+                            const result = await createDiscordLinkCode(idToken);
+                            setDiscordCode(result.code);
+                          } catch (err) {
+                            setDiscordError(displayApiError(err, 'Gagal membuat kode Discord.'));
+                          } finally {
+                            setDiscordBusy(false);
+                          }
+                        }}
+                      >
+                        {discordBusy ? 'Memproses…' : discordStatus?.linked ? 'Buat kode baru' : 'Hubungkan Discord'}
+                      </button>
+                      {discordStatus?.linked && (
+                        <button
+                          type="button"
+                          className="profile-photo-remove"
+                          disabled={discordBusy}
+                          onClick={async () => {
+                            if (!user) return;
+                            setDiscordBusy(true);
+                            setDiscordError(null);
+                            try {
+                              const idToken = await user.getIdToken();
+                              await unlinkDiscord(idToken);
+                              setDiscordStatus((prev) => (prev ? { ...prev, linked: false } : { configured: true, linked: false }));
+                              setDiscordCode(null);
+                            } catch (err) {
+                              setDiscordError(displayApiError(err, 'Gagal memutuskan koneksi Discord.'));
+                            } finally {
+                              setDiscordBusy(false);
+                            }
+                          }}
+                        >
+                          Putuskan
+                        </button>
+                      )}
+                    </div>
+
+                    {discordCode && (
+                      <div className="discord-code-box">
+                        <span>Jalankan di Discord (berlaku 10 menit):</span>
+                        <code>/link code:{discordCode}</code>
+                      </div>
+                    )}
+                    {discordError && <p className="form-error" role="alert">{discordError}</p>}
+                  </div>
+                </section>
+              </>
             )
           ) : activeArea === 'grades' ? (
             <GradeTracker user={user} activities={activityOptions} />
@@ -1236,80 +1322,6 @@ export default function AuthGate() {
         </div>
 
         {profileError && <p className="form-error" role="alert">{profileError}</p>}
-
-        <div className="settings-discord">
-          <div className="settings-discord-head">
-            <span className="settings-photo-label">Bot Discord</span>
-            {discordStatus?.linked && <span className="badge badge-submitted">Terhubung</span>}
-          </div>
-          <p className="form-hint">
-            Tanya tugas lewat <code>/today</code>, <code>/upcoming</code>, <code>/overdue</code>, <code>/summary</code> dan atur tujuan pengingat harian lewat <code>/setchannel</code> (DM atau channel server).
-          </p>
-          <div className="settings-photo-actions">
-            {discordStatus?.inviteUrl && (
-              <a
-                href={discordStatus.inviteUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="ghost-action"
-              >
-                Pilih Server Discord
-              </a>
-            )}
-            <button
-              type="button"
-              className="ghost-action"
-              disabled={discordBusy}
-              onClick={async () => {
-                if (!user) return;
-                setDiscordBusy(true);
-                setDiscordError(null);
-                try {
-                  const idToken = await user.getIdToken();
-                  const result = await createDiscordLinkCode(idToken);
-                  setDiscordCode(result.code);
-                } catch (err) {
-                  setDiscordError(displayApiError(err, 'Gagal membuat kode Discord.'));
-                } finally {
-                  setDiscordBusy(false);
-                }
-              }}
-            >
-              {discordBusy ? 'Memproses…' : discordStatus?.linked ? 'Buat kode baru' : 'Hubungkan Discord'}
-            </button>
-            {discordStatus?.linked && (
-              <button
-                type="button"
-                className="profile-photo-remove"
-                disabled={discordBusy}
-                onClick={async () => {
-                  if (!user) return;
-                  setDiscordBusy(true);
-                  setDiscordError(null);
-                  try {
-                    const idToken = await user.getIdToken();
-                    await unlinkDiscord(idToken);
-                    setDiscordStatus((prev) => (prev ? { ...prev, linked: false } : { configured: true, linked: false }));
-                    setDiscordCode(null);
-                  } catch (err) {
-                    setDiscordError(displayApiError(err, 'Gagal memutuskan koneksi Discord.'));
-                  } finally {
-                    setDiscordBusy(false);
-                  }
-                }}
-              >
-                Putuskan
-              </button>
-            )}
-          </div>
-          {discordCode && (
-            <div className="discord-code-box">
-              <span>Jalankan di Discord (berlaku 10 menit):</span>
-              <code>/link code:{discordCode}</code>
-            </div>
-          )}
-          {discordError && <p className="form-error" role="alert">{discordError}</p>}
-        </div>
       </dialog>
     </div>
   );
