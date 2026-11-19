@@ -1261,6 +1261,8 @@ export default function AuthGate() {
                     <li><code>/upcoming</code> — Lihat daftar tugas mendatang</li>
                     <li><code>/overdue</code> — Lihat tugas terlambat yang belum selesai</li>
                     <li><code>/summary</code> — Ringkasan lengkap semua deadline aktif</li>
+                    <li><code>/sync</code> — Sinkronkan tugas terbaru langsung dari SCELE</li>
+                    <li><code>/login</code> — Tombol buka & login cepat ke Scheduler Web</li>
                     <li><code>/setchannel</code> — Atur pengingat harian ke channel server ini atau DM pribadi</li>
                   </ul>
                 </div>

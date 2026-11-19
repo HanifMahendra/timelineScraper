@@ -39,8 +39,9 @@ semester berjalan tampil dalam satu tempat.
 - Setiap pengguna dapat menghubungkan akun Discord-nya langsung dari menu
   **Bot Discord** di navbar (pilih server via OAuth2 Discord lalu jalankan
   `/link code:XXXXXX`).
-- Mendukung slash command interaktif: `/today`, `/upcoming`, `/overdue`, dan
-  `/summary` (balasan *ephemeral* khusus pengguna).
+- Mendukung slash command interaktif: `/today`, `/upcoming`, `/overdue`,
+  `/summary`, `/sync` (sinkronisasi SCELE langsung dari Discord), dan `/login`
+  (tombol buka & login cepat ke Scheduler Web).
 - Pengingat harian otomatis di jam pilihan pengguna (WIB) ke DM pribadi atau
   channel server pilihan sendiri lewat `/setchannel`.
 
