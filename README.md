@@ -36,9 +36,9 @@ semester berjalan tampil dalam satu tempat.
 - Aktivitas yang dibatasi untuk kelas lain tidak ikut ditampilkan.
 
 **Bot Discord (Multi-User)**
-- Setiap pengguna dapat menghubungkan akun Discord-nya langsung dari kartu
-  **Bot Discord** di bawah Timeline (pilih server via OAuth2 Discord lalu
-  jalankan `/link code:XXXXXX`).
+- Setiap pengguna dapat menghubungkan akun Discord-nya langsung dari menu
+  **Bot Discord** di navbar (pilih server via OAuth2 Discord lalu jalankan
+  `/link code:XXXXXX`).
 - Mendukung slash command interaktif: `/today`, `/upcoming`, `/overdue`, dan
   `/summary` (balasan *ephemeral* khusus pengguna).
 - Pengingat harian otomatis setiap pukul 07:00 WIB ke DM pribadi atau channel
