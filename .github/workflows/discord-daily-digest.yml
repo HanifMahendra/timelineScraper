@@ -1,0 +1,28 @@
+name: Discord Daily Digest
+
+on:
+  schedule:
+    # 00:00 UTC = 07:00 WIB every day
+    - cron: '0 0 * * *'
+  workflow_dispatch:
+
+jobs:
+  send-digest:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger daily Discord digest
+        env:
+          AUTH_API_BASE_URL: ${{ vars.AUTH_API_BASE_URL || 'https://hanifmhndra-timeline-scele-auth.hf.space' }}
+          DISCORD_DIGEST_SECRET: ${{ secrets.DISCORD_DIGEST_SECRET }}
+        run: |
+          if [ -z "$DISCORD_DIGEST_SECRET" ]; then
+            echo "DISCORD_DIGEST_SECRET secret is not set. Skipping."
+            exit 0
+          fi
+          # Wake the Hugging Face Space first if asleep, then trigger the daily digest.
+          curl -fsS --retry 3 --retry-delay 10 --max-time 60 "$AUTH_API_BASE_URL/health" > /dev/null
+          curl -fsS --retry 2 --retry-delay 5 --max-time 60 \
+            -X POST "$AUTH_API_BASE_URL/bot/discord/daily-digest" \
+            -H "Authorization: Bearer $DISCORD_DIGEST_SECRET" \
+            -H "Content-Type: application/json" \
+            -d '{}'

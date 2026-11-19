@@ -2,6 +2,8 @@ export type TaskType = 'assignment' | 'quiz' | 'lab' | 'forum' | 'other';
 
 export type UrgencyStatus = 'overdue' | 'today' | 'soon' | 'normal';
 
+export type SubmissionStatus = 'submitted' | 'draft' | 'not_submitted' | 'unknown';
+
 export interface Task {
   title: string;
   type: TaskType;
@@ -24,6 +26,8 @@ export interface Task {
   previousDeadlineISO?: string;
   lastChangedAt?: string;
   version?: number;
+  submissionStatus?: SubmissionStatus;
+  submissionStatusText?: string | null;
 }
 
 export interface TimelineData {

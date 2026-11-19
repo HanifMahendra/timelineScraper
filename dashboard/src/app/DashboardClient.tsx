@@ -138,10 +138,20 @@ export default function DashboardClient({ timeline, selectedCourse, completedIds
 
   const filtered = useMemo(
     () => sortTasks(
-      courseTasks.filter((t) => matchesFilter(t, filter) && matchesSearch(t, search)),
+      courseTasks.filter((t) => {
+        if ((filter === 'overdue' || filter === 'today') && isTaskCompleted(t, completedIds)) {
+          return false;
+        }
+        return matchesFilter(t, filter) && matchesSearch(t, search);
+      }),
       sort
     ),
-    [courseTasks, filter, search, sort]
+    [courseTasks, completedIds, filter, search, sort]
+  );
+
+  const totalCompletedInCourse = useMemo(
+    () => courseTasks.filter((t) => isTaskCompleted(t, completedIds)).length,
+    [courseTasks, completedIds]
   );
 
   const useFlat = filter !== 'all' || search.length > 0;
@@ -183,7 +193,9 @@ export default function DashboardClient({ timeline, selectedCourse, completedIds
       <StatsCards
         timeline={courseTimeline}
         completedIds={completedIds}
-        completedCount={completedFiltered.length}
+        completedCount={totalCompletedInCourse}
+        activeFilter={filter}
+        onSelectFilter={setFilter}
       />
 
       <Filters
@@ -204,6 +216,10 @@ export default function DashboardClient({ timeline, selectedCourse, completedIds
           emptyMessage="Tidak ada tugas yang cocok dengan filter ini."
           completedIds={completedIds}
           onToggleDone={onToggleDone}
+          onResetFilter={() => {
+            setFilter('all');
+            setSearch('');
+          }}
         />
       ) : (
         <>
@@ -249,6 +265,8 @@ export default function DashboardClient({ timeline, selectedCourse, completedIds
               emptyMessage=""
               completedIds={completedIds}
               onToggleDone={onToggleDone}
+              collapsible
+              defaultOpen={pending.length === 0}
             />
           )}
         </>

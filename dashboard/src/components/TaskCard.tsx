@@ -1,8 +1,8 @@
 'use client';
 
 import { Card, CardContent } from '@/components/ui/card';
-import { CalendarClock, Check, ExternalLink, RotateCcw } from 'lucide-react';
-import { calendarDayDiffWIB } from '@/lib/timelineFilters';
+import { CalendarClock, Check, CheckCircle2, ExternalLink, RotateCcw } from 'lucide-react';
+import { calendarDayDiffWIB, isSceleSubmitted } from '@/lib/timelineFilters';
 import type { Task } from '@/types/task';
 
 interface Props {
@@ -115,11 +115,12 @@ function getRelativeTime(task: Task, completed: boolean): string | null {
 export default function TaskCard({ task, completed = false, onToggleDone }: Props) {
   if (task.lifecycleState === 'missing') return null;
 
-  const urgency = getUrgency(task, completed);
+  const sceleSubmitted = isSceleSubmitted(task);
+  const urgency = getUrgency(task, completed || sceleSubmitted);
   const typeConf = TYPE_CONFIG[task.type] ?? TYPE_CONFIG.other;
   const urgencyConf = URGENCY_CONFIG[urgency];
   const deadlineLabel = formatDeadlineID(task);
-  const relativeTime = getRelativeTime(task, completed);
+  const relativeTime = getRelativeTime(task, completed || sceleSubmitted);
   const changeConf =
     task.changeState && task.changeState !== 'unchanged'
       ? CHANGE_CONFIG[task.changeState]
@@ -130,7 +131,7 @@ export default function TaskCard({ task, completed = false, onToggleDone }: Prop
 
   return (
     <Card
-      className={`task-card task-card-${urgency} ${completed ? 'task-card-completed' : ''}`}
+      className={`task-card task-card-${urgency} ${completed || sceleSubmitted ? 'task-card-completed' : ''}`}
     >
       <CardContent className="task-card-content">
         <div className="task-card-meta">
@@ -143,12 +144,33 @@ export default function TaskCard({ task, completed = false, onToggleDone }: Prop
               {changeConf.label}
             </span>
           )}
-          {completed && (
+          {sceleSubmitted ? (
+            <span
+              className="badge badge-submission badge-submitted"
+              title={task.submissionStatusText ?? 'Submitted for grading'}
+            >
+              Sudah dikumpulkan
+            </span>
+          ) : task.submissionStatus === 'draft' ? (
+            <span
+              className="badge badge-submission badge-draft"
+              title={task.submissionStatusText ?? 'Draft (not submitted)'}
+            >
+              Draft (belum submit)
+            </span>
+          ) : task.submissionStatus === 'not_submitted' && !completed ? (
+            <span
+              className="badge badge-submission badge-not-submitted"
+              title={task.submissionStatusText ?? 'No attempt'}
+            >
+              Belum dikumpulkan
+            </span>
+          ) : completed ? (
             <span className="badge badge-urgency badge-completed">{urgencyConf.label}</span>
-          )}
+          ) : null}
         </div>
 
-        <p className={`task-title ${completed ? 'task-title-done' : ''}`}>
+        <p className={`task-title ${completed || sceleSubmitted ? 'task-title-done' : ''}`}>
           {task.title}
         </p>
 
@@ -184,15 +206,22 @@ export default function TaskCard({ task, completed = false, onToggleDone }: Prop
               Buka di SCELE
             </a>
           )}
-          {onToggleDone && (
-            <button
-              type="button"
-              onClick={() => onToggleDone(task)}
-              className={`done-button ${completed ? 'done-button-cancel' : ''}`}
-            >
-              {completed ? <RotateCcw size={13} aria-hidden="true" /> : <Check size={13} aria-hidden="true" />}
-              {completed ? 'Batalkan' : 'Tandai selesai'}
-            </button>
+          {sceleSubmitted ? (
+            <span className="scele-verified-note">
+              <CheckCircle2 size={13} aria-hidden="true" />
+              Terdeteksi dari SCELE
+            </span>
+          ) : (
+            onToggleDone && (
+              <button
+                type="button"
+                onClick={() => onToggleDone(task)}
+                className={`done-button ${completed ? 'done-button-cancel' : ''}`}
+              >
+                {completed ? <RotateCcw size={13} aria-hidden="true" /> : <Check size={13} aria-hidden="true" />}
+                {completed ? 'Batalkan' : 'Tandai selesai'}
+              </button>
+            )
           )}
         </div>
       </CardContent>
